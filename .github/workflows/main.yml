@@ -16,8 +16,8 @@ jobs:
 
     - name: execute py
       env:
-        DATABRICKS_HOST: $(DATABRICKS_HOST)
-        DATABRICKS_TOKEN: $(DATABRICKS_TOKEN)
+        DATABRICKS_HOST: https://3974167210227564.4.gcp.databricks.com/
+        DATABRICKS_TOKEN: dapice8cfd453238dac403facb2fa9d9ae4e
       run: |
         python -m pip install --upgrade databricks-cli
         databricks repos update --repo-id 265351023196717 --branch main
