@@ -1,5 +1,6 @@
 import re
 
+
 from setuptools import find_packages, setup
 
 with open("bancor_etl/__init__.py") as fd:
