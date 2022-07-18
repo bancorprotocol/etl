@@ -5,7 +5,32 @@
 # See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------
 """
+# Initialization of dbutils to avoid linting errors during developing in vscode
+from pyspark.sql import SparkSession
 import numpy as np
+
+
+def get_dbutils(spark):
+    """Return dbutils for databricks."""
+    if spark.conf.get("spark.databricks.service.client.enabled") == "true":
+        from pyspark.dbutils import DBUtils
+
+        return DBUtils(spark)
+    else:
+        import IPython
+
+        return IPython.get_ipython().user_ns["dbutils"]
+
+
+spark = SparkSession.builder.appName("Pipeline").getOrCreate()
+dbutils = get_dbutils(spark)
+
+# COMMAND ----------
+
+# Define parameters
+ETL_USER_NAME = dbutils.secrets.get(scope="ETL", key="ETL_USER_NAME")
+ETL_ROBOT_NAME = dbutils.secrets.get(scope="ETL", key="ETL_ROBOT_NAME")
+ETL_GOOGLE_SHEETS_CREDENTIALS = dbutils.secrets.get(scope="ETL", key="ETL_GOOGLE_SHEETS_CREDENTIALS")
 
 # base google sheet name to increment tableau wildcard * union on
 EVENTS_TABLE = 'all_events'

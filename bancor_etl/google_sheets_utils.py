@@ -18,8 +18,6 @@ from bancor_etl.constants import *
 
 
 # Initialization of dbutils to avoid linting errors during developing in vscode/pycharm/IDE
-
-
 def get_dbutils(spark):
     """Return dbutils for databricks."""
     if spark.conf.get("spark.databricks.service.client.enabled") == "true":
@@ -32,8 +30,9 @@ def get_dbutils(spark):
         return IPython.get_ipython().user_ns["dbutils"]
 
 
-spark = SparkSession.builder.appName("Pipeline").getOrCreate()
+spark = SparkSession.builder.getOrCreate()
 dbutils = get_dbutils(spark)
+
 
 # MAGIC %md
 # MAGIC ## Functions
