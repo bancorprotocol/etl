@@ -5,16 +5,17 @@
 # See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------
 """
-import pandas as pd
-import numpy as np
-from typing import Tuple
 import os
-from sklearn.preprocessing import OrdinalEncoder
 import time
+from typing import Tuple
+
+import pandas as pd
 import pygsheets
-from bancor_research.bancor_etl.src.constants import *
-import pyspark
 from pyspark.sql import SparkSession
+from sklearn.preprocessing import OrdinalEncoder
+
+from bancor_etl.constants import *
+
 
 # Initialization of dbutils to avoid linting errors during developing in vscode/pycharm/IDE
 
