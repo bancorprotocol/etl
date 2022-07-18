@@ -21,4 +21,3 @@ jobs:
       run: |
         python -m pip install --upgrade databricks-cli
         databricks repos update --repo-id 265351023196717 --branch main
-      
