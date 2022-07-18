@@ -253,6 +253,10 @@ def handle_types_and_missing_values(pdf: pd.DataFrame,
                     pdf[col] = pdf[col].replace(err, default_value)
             pdf[col] = pdf[col].astype(col_type)
 
+    pdf['bntprice'] = pdf['bntprice'].replace('0E+18', '0.0')
+    pdf['emaRate'] = pdf['emaRate'].replace('0E+18', '0.0')
+    pdf['bntprice'] = pdf['bntprice'].replace('<NA>', '0.0')
+    pdf['emaRate'] = pdf['emaRate'].replace('<NA>', '0.0')
     return pdf[all_columns]
 
 
