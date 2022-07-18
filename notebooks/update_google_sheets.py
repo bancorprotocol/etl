@@ -1,12 +1,9 @@
+# Databricks notebook source
 # coding=utf-8
-"""
 # --------------------------------------------------------------------------------
-# Licensed under the Bprotocol Foundation (Bancor) LICENSE.
+# Licensed under the Bprotocol Foundation (Bancor) LICENSE. 
 # See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------
-"""
-
-# COMMAND ----------
 """
 Instructions:
 
@@ -15,22 +12,151 @@ Adding new tables:
 * Add the table name to the list of tables in CMD 6 in this notebook.
 
 Adding new columns:
-* Update the data dictionary with new column and type in google sheets
+* Update the data dictionary with new column and type in google sheets here: 
+    - https://docs.google.com/spreadsheets/d/1ACXfEc2symSVWH-0y7QCMTnADrQInr-czXZrM5GVbJQ/edit#gid=0
+
+Then run... 
 
 Updates require 30+ minutes to complete once started.
 """
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Dependencies
-
-# COMMAND ----------
-
-import mlflow
-
-# COMMAND ----------
 from bancor_etl.google_sheets_utils import *
+
+ADDRESS_COLUMNS = [
+    # 'contextId', 'pool', 'txhash', 'provider'
+]
+
+REPLACE_WITH_NA = ['0E+18', '<NA>']
+
+# Maps the google sheets data dictionary to python/pandas types and fillna values
+TYPE_MAP = {
+    'decimal': {
+        'type': str,
+        'fillna': '0.0'
+    },
+    'integer': {
+        'type': int,
+        'fillna': 0
+    },
+    'string': {
+        'type': str,
+        'fillna': np.nan
+    },
+    'datetime': {
+        'type': 'datetime64[ns]',
+        'fillna': np.nan
+    },
+    'bool': {
+        'type': bool,
+        'fillna': np.nan
+    },
+}
+
+LIST_OF_SPARK_TABLES = [
+    # Add new table names here (see instructions at top of notebook)
+
+    # NEW TABLES -> implemented on July 5, 2022
+    'events_all_tokensdeposited_csv',
+    'events_bancornetwork_flashloancompleted_csv',
+    'events_bancornetwork_fundsmigrated_csv',
+    'events_bancornetwork_networkfeeswithdrawn_csv',
+    'events_bancornetwork_pooladded_csv',
+    'events_bancornetwork_poolcollectionadded_csv',
+    'events_bancornetwork_poolcollectionremoved_csv',
+    'events_bancornetwork_poolcreated_csv',
+    'events_bancornetwork_poolremoved_csv',
+    'events_bancornetwork_tokenstraded_csv',
+    'events_bancornetwork_tokenstraded_updated_csv',
+    'events_bancorportal_sushiswappositionmigrated_csv',
+    'events_bancorportal_uniswapv2positionmigrated_csv',
+    'events_bancorv1migration_positionmigrated_csv',
+    'events_bntpool_fundingrenounced_csv',
+    'events_bntpool_fundingrequested_csv',
+    'events_bntpool_fundsburned_csv',
+    'events_bntpool_fundswithdrawn_csv',
+    'events_bntpool_tokensdeposited_csv',
+    'events_bntpool_tokenswithdrawn_csv',
+    'events_bntpool_totalliquidityupdated_csv',
+    'events_combined_tokenstraded_daily_fees_csv',
+    'events_combined_tokenstraded_daily_volume_csv',
+    'events_externalprotectionvault_fundsburned_csv',
+    'events_externalprotectionvault_fundswithdrawn_csv',
+    'events_externalrewardsvault_fundsburned_csv',
+    'events_externalrewardsvault_fundswithdrawn_csv',
+    'events_mastervault_fundsburned_csv',
+    'events_mastervault_fundswithdrawn_csv',
+    'events_networksettings_defaultflashloanfeeppmupdated_csv',
+    'events_networksettings_flashloanfeeppmupdated_csv',
+    'events_networksettings_fundinglimitupdated_csv',
+    'events_networksettings_minliquidityfortradingupdated_csv',
+    'events_networksettings_tokenaddedtowhitelist_csv',
+    'events_networksettings_tokenremovedfromwhitelist_csv',
+    'events_networksettings_vortexburnrewardupdated_csv',
+    'events_networksettings_withdrawalfeeppmupdated_csv',
+    'events_pendingwithdrawals_withdrawalcancelled_csv',
+    'events_pendingwithdrawals_withdrawalcompleted_csv',
+    'events_pendingwithdrawals_withdrawalcurrentpending_csv',
+    'events_pendingwithdrawals_withdrawalinitiated_csv',
+    'events_poolcollection_defaulttradingfeeppmupdated_csv',
+    'events_poolcollection_depositingenabled_csv',
+    'events_poolcollection_tokensdeposited_csv',
+    'events_poolcollection_tokenswithdrawn_csv',
+    'events_poolcollection_totalliquidityupdated_csv',
+    'events_poolcollection_tradingenabled_csv',
+    'events_poolcollection_tradingfeeppmupdated_csv',
+    'events_poolcollection_tradingliquidityupdated_csv',
+    'events_pooldata_historical_latest_csv',
+    'events_stakingrewardsclaim_rewardsclaimed_csv',
+    'events_stakingrewardsclaim_rewardsstaked_csv',
+    'events_standardrewards_programcreated_csv',
+    'events_standardrewards_programenabled_csv',
+    'events_standardrewards_programterminated_csv',
+    'events_standardrewards_providerjoined_csv',
+    'events_standardrewards_providerleft_csv',
+    'events_standardrewards_rewardsclaimed_csv',
+    'events_standardrewards_rewardsstaked_csv',
+    'events_v3_daily_bnttradingliquidity_csv',
+    'events_v3_historical_deficit_by_tkn_csv',
+    'events_v3_historical_deficit_csv',
+    'events_v3_historical_spotrates_emarates_csv',
+    'events_v3_historical_tradingliquidity_csv'
+]
+
+UNUSED_EVENTS = [
+    'poolcollection_defaulttradingfeeppmupdated_csv',
+    'events_poolcollection_depositingenabled_csv',
+    'events_poolcollection_totalliquidityupdated_csv',
+    'events_poolcollection_tradingfeeppmupdated_csv',
+    'events_poolcollection_tradingliquidityupdated_csv',
+    'events_stakingrewardsclaim_rewardsclaimed_csv',
+    'events_stakingrewardsclaim_rewardsstaked_csv',
+    'events_standardrewards_programcreated_csv',
+    'events_standardrewards_programenabled_csv',
+    'events_standardrewards_programterminated_csv',
+    'events_standardrewards_providerjoined_csv',
+    'events_standardrewards_providerleft_csv',
+    'events_standardrewards_rewardsclaimed_csv',
+    'events_standardrewards_rewardsstaked_csv',
+    'events_poolcollection_tradingliquidityupdated_spotrates_csv',
+]
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Functions
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
 
 data_dictionary = get_data_dictionary()
 data_dictionary
@@ -45,6 +171,7 @@ for col in ALL_COLUMNS:
     col_type = data_dictionary[data_dictionary['Column'] == col]['Type'].values[0]
     DEFAULT_VALUE_MAP[col] = TYPE_MAP[col_type]['fillna']
 
+DEFAULT_VALUE_MAP
 
 # COMMAND ----------
 
@@ -54,31 +181,33 @@ for col in ALL_COLUMNS:
 # COMMAND ----------
 
 unique_col_mapping, combined_df = get_event_mapping(
-    all_columns=ALL_COLUMNS,
+    all_columns=ALL_COLUMNS, 
     default_value_map=DEFAULT_VALUE_MAP
 )
 
 # Loops through each table.
 for table_name in LIST_OF_SPARK_TABLES:
-
+    
     try:
         # Cleans the google sheets name for clarity.
         clean_table_name = clean_google_sheets_name(table_name)
 
         # Loads spark tables and converts to pandas
         pdf = get_pandas_df(table_name)
-
+        
         # Adds a new column with the event name based on table name
         pdf = add_event_name_column(pdf, clean_table_name)
-
+        
         # Normalizes unique columns across all tables
         pdf = add_missing_columns(pdf, unique_col_mapping, ALL_COLUMNS)
 
         # Combine the dataframes
         combined_df = concat_dataframes(pdf, combined_df)
-
-    except ValueError as e:
-        print(e, f'table not found {table_name}')
+        
+    except:
+        
+        print(f'table not found {table_name}')
+    
 
 # COMMAND ----------
 
@@ -86,9 +215,12 @@ for table_name in LIST_OF_SPARK_TABLES:
 # MAGIC ## Handle Types & Missing Values
 
 # COMMAND ----------
-for val in REPLACE_WITH_NA:
-    combined_df['bntprice'] = combined_df['bntprice'].replace(val, '0.0')
-    combined_df['emaRate'] = combined_df['emaRate'].replace(val, '0.0')
+
+combined_df['bntprice'] = combined_df['bntprice'].replace('0E+18','0.0')
+combined_df['emaRate'] = combined_df['emaRate'].replace('0E+18','0.0')
+
+combined_df['bntprice'] = combined_df['bntprice'].replace('<NA>','0.0')
+combined_df['emaRate'] = combined_df['emaRate'].replace('<NA>','0.0')
 
 # COMMAND ----------
 
@@ -127,19 +259,20 @@ combined_df = remove_unused_events(combined_df)
 file_size_compatible = False
 
 while not file_size_compatible:
-
+    
     # Splits the pandas dataframe into chunks which conform to the max google sheet size.
     pdf_chunks = split_dataframe(combined_df, TABLEAU_MANAGEABLE_ROWS)
-
+    
     # Store the number of chunks to upload to google sheets
     num_chunks = len(pdf_chunks)
-
+    
     # Recheck if the file size is <= 10MB per tableau requirements
     file_size_compatible = is_file_size_compatible(pdf_chunks)
-
+    
     # Increment size downward by 1000 and try again if not compatible
     if not file_size_compatible:
         TABLEAU_MANAGEABLE_ROWS -= 1000
+
 
 # COMMAND ----------
 
@@ -167,5 +300,4 @@ delete_unused_google_sheets(num_chunks)
 # COMMAND ----------
 
 from collections import Counter
-
 Counter(combined_df.event_name)
