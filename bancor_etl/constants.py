@@ -14,8 +14,8 @@ spark = SparkSession.builder.getOrCreate()
 
 
 # Define parameters
-ETL_USER_NAME = os.environ.get("ETL_USER_NAME")
-ETL_ROBOT_NAME = os.environ.get("ETL_ROBOT_NAME")
+ETL_USER_EMAIL = os.environ.get("ETL_USER_NAME")
+ETL_ROBOT_EMAIL = os.environ.get("ETL_ROBOT_NAME")
 ETL_GOOGLE_SHEETS_CREDENTIALS = os.environ.get("ETL_GOOGLE_SHEETS_CREDENTIALS")
 
 # base google sheet name to increment tableau wildcard * union on
