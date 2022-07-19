@@ -168,7 +168,8 @@ UNUSED_EVENTS = [
 
 # COMMAND ----------
 
-
+ETL_USER_NAME = spark.conf.get("ETL_USER_NAME")
+ETL_USER_NAME
 
 # COMMAND ----------
 
