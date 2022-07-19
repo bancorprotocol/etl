@@ -141,3 +141,4 @@ artifacts
 .idea/sonarlint/issuestore/index.pb
 /.run/
 .run/
+notebooks/.ipynb_checkpoints/

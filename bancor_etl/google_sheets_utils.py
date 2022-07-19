@@ -8,38 +8,13 @@
 import os
 import time
 from typing import Tuple
-
 import pandas as pd
 import pygsheets
-from pyspark.sql import SparkSession
 from sklearn.preprocessing import OrdinalEncoder
-
 from bancor_etl.constants import *
 
 
-# Initialization of dbutils to avoid linting errors during developing in vscode/pycharm/IDE
-def get_dbutils(spark):
-    """Return dbutils for databricks."""
-    if spark.conf.get("spark.databricks.service.client.enabled") == "true":
-        from pyspark.dbutils import DBUtils
-
-        return DBUtils(spark)
-    else:
-        import IPython
-
-        return IPython.get_ipython().user_ns["dbutils"]
-
-
-spark = SparkSession.builder.getOrCreate()
-dbutils = get_dbutils(spark)
-
-
-# MAGIC %md
-# MAGIC ## Functions
-
-# COMMAND ----------
-
-def get_pandas_df(table_name: str) -> pd.DataFrame:
+def get_pandas_df(spark, table_name: str) -> pd.DataFrame:
     """
     Load spark table and convert to pandas.
     """
@@ -54,7 +29,7 @@ def get_pandas_df(table_name: str) -> pd.DataFrame:
 
 def split_dataframe(df: pd.DataFrame,
                     chunk_size: int = TABLEAU_MANAGEABLE_ROWS
-                    ) -> pd.DataFrame:
+                    ) -> list:
     """
     Splits dataframe into chunks where each chunk has a specified size (in rows).
     """
@@ -81,7 +56,7 @@ def handle_google_sheets_auth():
     return gc
 
 
-def delete_unused_google_sheets(num_chunks: list, max_search: int = 100):
+def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
     """
     Connect to google sheets via API, then delete any old google sheets not currently used.
     """
@@ -92,15 +67,15 @@ def delete_unused_google_sheets(num_chunks: list, max_search: int = 100):
     sheet_titles = ['all_events_' + str(n) for n in range(num_chunks, max_search)]
     for title in sheet_titles:
         try:
-            # sheet = gc.delete(title)
             res = gc.sheet.get(title)
             sheet_id = res['spreadsheetId']
             gc.drive.delete(sheet_id)
             print(f"Deleted spreadsheet with title:{title}")
 
-        except:
+        except pygsheets.SpreadsheetNotFound as error:
+
             # Can't find it to delete it
-            pass
+            print(error)
 
 
 def handle_google_sheets(clean_table_name: str,
@@ -180,7 +155,8 @@ def add_unique_columns(pdf: pd.DataFrame,
     return unique_col_mapping
 
 
-def get_event_mapping(all_columns: list,
+def get_event_mapping(spark,
+                      all_columns: list,
                       default_value_map: dict,
                       unique_col_mapping=None,
                       combined_df=None) -> Tuple[dict, pd.DataFrame]:
@@ -195,7 +171,7 @@ def get_event_mapping(all_columns: list,
     for table_name in LIST_OF_SPARK_TABLES:
         # Cleans the google sheets name for clarity.
         clean_table_name = clean_google_sheets_name(table_name)
-        pdf = get_pandas_df(table_name)
+        pdf = get_pandas_df(spark, table_name)
         pdf = add_event_name_column(pdf, clean_table_name)
         unique_col_mapping = add_unique_columns(pdf, unique_col_mapping, default_value_map)
 
