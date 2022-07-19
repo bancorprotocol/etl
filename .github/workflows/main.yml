@@ -21,7 +21,4 @@ jobs:
         DATABRICKS_TOKEN: dapice8cfd453238dac403facb2fa9d9ae4e
       run: |
         python -m pip install --upgrade databricks-cli
-        python setup.py install
-        python setup.py bdist_wheel
-        databricks fs cp --overwrite --recursive dist/ dbfs:/FileStore/libraries/bancor_etl
         databricks repos update --repo-id 265351023196717 --branch main
