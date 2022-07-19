@@ -158,6 +158,7 @@ def add_unique_columns(pdf: pd.DataFrame,
 def get_event_mapping(spark,
                       all_columns: list,
                       default_value_map: dict,
+                      list_of_spark_tables: list,
                       unique_col_mapping=None,
                       combined_df=None) -> Tuple[dict, pd.DataFrame]:
     """
@@ -168,7 +169,7 @@ def get_event_mapping(spark,
         unique_col_mapping = {}
     if combined_df is None:
         combined_df = {}
-    for table_name in LIST_OF_SPARK_TABLES:
+    for table_name in list_of_spark_tables:
         # Cleans the google sheets name for clarity.
         clean_table_name = clean_google_sheets_name(table_name)
         pdf = get_pandas_df(spark, table_name)
