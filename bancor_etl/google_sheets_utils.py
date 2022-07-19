@@ -77,7 +77,7 @@ def handle_google_sheets_auth():
     """
     Connect to google sheets via API, then uploads and overwrites worksheets by name.
     """
-    gc = pygsheets.authorize(service_file=GOOGLE_SHEETS_CREDENTIALS)
+    gc = pygsheets.authorize(service_file=ETL_GOOGLE_SHEETS_CREDENTIALS)
     return gc
 
 
@@ -136,11 +136,11 @@ def handle_google_sheets(clean_table_name: str,
         # Share with self to allow to write to it
         if FORCE_RATE_THROTTLE:
             time.sleep(SLEEP_TIME)
-        sheet.share(ROBOT_EMAIL, role='writer', type='user')
+        sheet.share(ETL_ROBOT_EMAIL, role='writer', type='user')
 
         if FORCE_RATE_THROTTLE:
             time.sleep(SLEEP_TIME)
-        sheet.share(USER_EMAIL, role='writer', type='user')
+        sheet.share(ETL_USER_EMAIL, role='writer', type='user')
 
         # Share to all for reading
         sheet.share('', role='reader', type='anyone')
@@ -182,12 +182,16 @@ def add_unique_columns(pdf: pd.DataFrame,
 
 def get_event_mapping(all_columns: list,
                       default_value_map: dict,
-                      unique_col_mapping: dict = {},
-                      combined_df: dict = {}) -> dict:
+                      unique_col_mapping=None,
+                      combined_df=None) -> Tuple[dict, pd.DataFrame]:
     """
     Finds unique column names and their type for all event tables.
     """
     # Loops through each table.
+    if unique_col_mapping is None:
+        unique_col_mapping = {}
+    if combined_df is None:
+        combined_df = {}
     for table_name in LIST_OF_SPARK_TABLES:
         # Cleans the google sheets name for clarity.
         clean_table_name = clean_google_sheets_name(table_name)
