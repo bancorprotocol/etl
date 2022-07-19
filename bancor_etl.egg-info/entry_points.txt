@@ -1,3 +1,0 @@
-[console_scripts]
-bancor_simulator = bancor_research.bancor_simulator.__main__:cli
-
