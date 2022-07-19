@@ -1,15 +1,15 @@
 # Databricks notebook source
 # coding=utf-8
 # --------------------------------------------------------------------------------
-# Licensed under the Bprotocol Foundation (Bancor) LICENSE. 
-# See License.txt in the project root for license information.
+# MIT License
+# Copyright (c) 2022 Bancor
 # --------------------------------------------------------------------------------
 """
 Instructions:
 
 Adding new tables:
-* Ensure a spark table exists in databricks with an appropriate table name
-* Add the table name to the list of tables in CMD 6 in this notebook.
+* Ensure a spark table exists with an appropriate table name
+* Add the table name to the list of tables in CMD 5 in this notebook.
 
 Adding new columns:
 * Update the data dictionary with new column and type in google sheets:
@@ -31,12 +31,7 @@ Updates require 30+ minutes to complete once started.
 
 from bancor_etl.google_sheets_utils import *
 
-# # To iterate on tests during development, we restart the Python process
-# # and thus clear the import cache to pick up changes.
-# dbutils.library.restartPython()
-
 # COMMAND ----------
-
 
 ADDRESS_COLUMNS = [
     # 'contextId', 'pool', 'txhash', 'provider'
@@ -159,20 +154,6 @@ UNUSED_EVENTS = [
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Functions
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-ETL_USER_NAME = spark.conf.get("ETL_USER_NAME")
-ETL_USER_NAME
-
-# COMMAND ----------
-
 data_dictionary = get_data_dictionary()
 data_dictionary
 
@@ -186,7 +167,22 @@ for col in ALL_COLUMNS:
     col_type = data_dictionary[data_dictionary['Column'] == col]['Type'].values[0]
     DEFAULT_VALUE_MAP[col] = TYPE_MAP[col_type]['fillna']
 
-DEFAULT_VALUE_MAP
+# COMMAND ----------
+
+from pyspark.sql.functions import col
+
+list_of_spark_tables = []
+
+# Loops through each table.
+for table_name in LIST_OF_SPARK_TABLES:
+    
+    #ensure that table exists
+    if (spark.sql("show tables in default"
+                 ).filter(col("tableName") == f"{table_name}").count() > 0):
+        list_of_spark_tables.append(table_name)
+    else:
+        print(f'table not found {table_name}')
+        
 
 # COMMAND ----------
 
@@ -196,32 +192,35 @@ DEFAULT_VALUE_MAP
 # COMMAND ----------
 
 unique_col_mapping, combined_df = get_event_mapping(
+    spark,
     all_columns=ALL_COLUMNS, 
-    default_value_map=DEFAULT_VALUE_MAP
+    default_value_map=DEFAULT_VALUE_MAP,
+    list_of_spark_tables=list_of_spark_tables
 )
 
+
+# COMMAND ----------
+
+
 # Loops through each table.
-for table_name in LIST_OF_SPARK_TABLES:
-    
-    try:
-        # Cleans the google sheets name for clarity.
-        clean_table_name = clean_google_sheets_name(table_name)
+for table_name in list_of_spark_tables:
+        
+    # Cleans the google sheets name for clarity.
+    clean_table_name = clean_google_sheets_name(table_name)
 
-        # Loads spark tables and converts to pandas
-        pdf = get_pandas_df(table_name)
-        
-        # Adds a new column with the event name based on table name
-        pdf = add_event_name_column(pdf, clean_table_name)
-        
-        # Normalizes unique columns across all tables
-        pdf = add_missing_columns(pdf, unique_col_mapping, ALL_COLUMNS)
+    # Loads spark tables and converts to pandas
+    pdf = get_pandas_df(spark, table_name)
 
-        # Combine the dataframes
-        combined_df = concat_dataframes(pdf, combined_df)
+    # Adds a new column with the event name based on table name
+    pdf = add_event_name_column(pdf, clean_table_name)
+
+    # Normalizes unique columns across all tables
+    pdf = add_missing_columns(pdf, unique_col_mapping, ALL_COLUMNS)
+
+    # Combine the dataframes
+    combined_df = concat_dataframes(pdf, combined_df)
         
-    except:
         
-        print(f'table not found {table_name}')
     
 
 # COMMAND ----------
@@ -231,16 +230,13 @@ for table_name in LIST_OF_SPARK_TABLES:
 
 # COMMAND ----------
 
-combined_df['bntprice'] = combined_df['bntprice'].replace('0E+18','0.0')
-combined_df['emaRate'] = combined_df['emaRate'].replace('0E+18','0.0')
-
-combined_df['bntprice'] = combined_df['bntprice'].replace('<NA>','0.0')
-combined_df['emaRate'] = combined_df['emaRate'].replace('<NA>','0.0')
-
-# COMMAND ----------
-
 # fills in any remaining missing values for encoder
-combined_df = handle_types_and_missing_values(combined_df, DEFAULT_VALUE_MAP, ALL_COLUMNS, TYPE_MAP)
+combined_df = handle_types_and_missing_values(combined_df, 
+                                              DEFAULT_VALUE_MAP, 
+                                              ALL_COLUMNS, 
+                                              TYPE_MAP,
+                                              data_dictionary
+                                             )
 combined_df
 
 # COMMAND ----------
@@ -250,6 +246,7 @@ combined_df
 
 # COMMAND ----------
 
+import mlflow
 # Log to mlflow for easy download reference
 combined_df.to_csv('/dbfs/FileStore/tables/combined_df.csv', index=False)
 mlflow.log_artifact('/dbfs/FileStore/tables/combined_df.csv')
@@ -307,10 +304,6 @@ for i in range(num_chunks):
 # COMMAND ----------
 
 delete_unused_google_sheets(num_chunks)
-
-# COMMAND ----------
-
-# combined_df[combined_df.event_name=='v3_historical_spotrates_emarates']
 
 # COMMAND ----------
 
