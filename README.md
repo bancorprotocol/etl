@@ -1,5 +1,6 @@
 [![.github/workflows/main.yml](https://github.com/bancorprotocol/etl/actions/workflows/main.yml/badge.svg)](https://github.com/bancorprotocol/etl/actions/workflows/main.yml)
 
+
 # Software engineering best practices for Databricks notebooks
 
 This repository is a companion for the example article "Software engineering best practices for Databricks notebooks" ([AWS](https://docs.databricks.com/notebooks/best-practices.html) | [Azure](https://docs.microsoft.com/azure/databricks/notebooks/best-practices) | [GCP](https://docs.gcp.databricks.com/notebooks/best-practices.html)).
