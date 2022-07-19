@@ -6,12 +6,8 @@
 # --------------------------------------------------------------------------------
 """
 # Initialization of dbutils to avoid linting errors during developing in vscode
-from pyspark.sql import SparkSession
 import numpy as np
 import os
-
-spark = SparkSession.builder.getOrCreate()
-
 
 # Define parameters
 ETL_USER_EMAIL = os.environ.get("ETL_USER_NAME")
