@@ -67,15 +67,13 @@ def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
     sheet_titles = ['all_events_' + str(n) for n in range(num_chunks, max_search)]
     for title in sheet_titles:
         try:
-            res = gc.sheet.get(title)
-            sheet_id = res['spreadsheetId']
-            gc.drive.delete(sheet_id)
+            wb = gc.open(title)
+            gc.drive.delete(wb.id)
             print(f"Deleted spreadsheet with title:{title}")
 
-        except pygsheets.SpreadsheetNotFound as error:
+        except:
 
-            # Can't find it to delete it
-            print(error)
+            print('Cant find it or insufficient permissions to delete it')
 
 
 def handle_google_sheets(clean_table_name: str,
@@ -298,8 +296,9 @@ def remove_unused_events(combined_df: pd.DataFrame) -> pd.DataFrame:
     Removes unused events from the combined dataframe.
     """
     keep_events = combined_df['event_name'].unique()
+    unused_events = [clean_google_sheets_name(event) for event in UNUSED_EVENTS]
     keep_events = [
-        clean_google_sheets_name(event) for event in keep_events if event not in UNUSED_EVENTS
+        clean_google_sheets_name(event) for event in keep_events if event not in unused_events
     ]
     combined_df = combined_df[
         combined_df['event_name'].isin(keep_events)
