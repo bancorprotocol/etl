@@ -1,2 +1,0 @@
-bancor_etl
-notebooks
