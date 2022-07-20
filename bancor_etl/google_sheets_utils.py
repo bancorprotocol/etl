@@ -12,7 +12,7 @@ import pandas as pd
 import pygsheets
 from sklearn.preprocessing import OrdinalEncoder
 
-from constants import *
+from .constants import *
 
 
 def get_pandas_df(spark, table_name: str) -> pd.DataFrame:
