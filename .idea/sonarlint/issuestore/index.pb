@@ -6,5 +6,3 @@ E
 :
 
 .gitignore,a/5/a5cc2925ca8258af241be7e5b0381edf30266302
-G
-bancor_etl/constants.py,2/8/281e73915ab1e8c948682832f5805a355849c9a4
