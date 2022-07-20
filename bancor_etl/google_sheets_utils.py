@@ -100,25 +100,26 @@ def handle_google_sheets(clean_table_name: str,
         sheet = wb.worksheet_by_title(sheet_title)
         print(f"Opened spreadsheet with id:{sheet_title}")
 
-    except:
+    except pygsheets.WorksheetNotFound as error:
         # Can't find it and so create it
         res = gc.sheet.create(sheet_title)
         sheet_id = res['spreadsheetId']
         sheet = gc.open_by_key(sheet_id)
         print(f"Created spreadsheet with id:{sheet.id} and url:{sheet.url}")
+        
+        sheet.add_worksheet(sheet_title,
+                            rows=num_rows,
+                            cols=num_cols)
 
         # Share with self to allow to write to it
-        sheet.share(ETL_ROBOT_EMAIL, role='writer', type='user')
+        sheet.share(ETL_ROBOT_EMAIL, role='owner', type='user')
         sheet.share(ETL_USER_EMAIL, role='writer', type='user')
 
         # Share to all for reading
         sheet.share('', role='reader', type='anyone')
-        sheet.add_worksheet(sheet_title,
-                            rows=num_rows,
-                            cols=num_cols)
+
         # open the sheet by name
-        wb = gc.open(sheet_title)
-        sheet = wb.worksheet_by_title(sheet_title)
+        sheet = sheet.worksheet_by_title(sheet_title)
 
     sheet.resize(num_rows, num_cols)
 
