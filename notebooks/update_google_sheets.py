@@ -67,70 +67,72 @@ LIST_OF_SPARK_TABLES = [
     # Add new table names here (see instructions at top of notebook)
 
     # NEW TABLES -> implemented on July 5, 2022
-    'events_all_tokensdeposited_csv',
-    'events_bancornetwork_flashloancompleted_csv',
-    'events_bancornetwork_fundsmigrated_csv',
-    'events_bancornetwork_networkfeeswithdrawn_csv',
-    'events_bancornetwork_pooladded_csv',
-    'events_bancornetwork_poolcollectionadded_csv',
-    'events_bancornetwork_poolcollectionremoved_csv',
-    'events_bancornetwork_poolcreated_csv',
-    'events_bancornetwork_poolremoved_csv',
-    'events_bancornetwork_tokenstraded_csv',
-    'events_bancornetwork_tokenstraded_updated_csv',
-    'events_bancorportal_sushiswappositionmigrated_csv',
-    'events_bancorportal_uniswapv2positionmigrated_csv',
-    'events_bancorv1migration_positionmigrated_csv',
-    'events_bntpool_fundingrenounced_csv',
-    'events_bntpool_fundingrequested_csv',
-    'events_bntpool_fundsburned_csv',
-    'events_bntpool_fundswithdrawn_csv',
-    'events_bntpool_tokensdeposited_csv',
-    'events_bntpool_tokenswithdrawn_csv',
-    'events_bntpool_totalliquidityupdated_csv',
-    'events_combined_tokenstraded_daily_fees_csv',
-    'events_combined_tokenstraded_daily_volume_csv',
-    'events_externalprotectionvault_fundsburned_csv',
-    'events_externalprotectionvault_fundswithdrawn_csv',
-    'events_externalrewardsvault_fundsburned_csv',
-    'events_externalrewardsvault_fundswithdrawn_csv',
-    'events_mastervault_fundsburned_csv',
-    'events_mastervault_fundswithdrawn_csv',
-    'events_networksettings_defaultflashloanfeeppmupdated_csv',
-    'events_networksettings_flashloanfeeppmupdated_csv',
-    'events_networksettings_fundinglimitupdated_csv',
-    'events_networksettings_minliquidityfortradingupdated_csv',
-    'events_networksettings_tokenaddedtowhitelist_csv',
-    'events_networksettings_tokenremovedfromwhitelist_csv',
-    'events_networksettings_vortexburnrewardupdated_csv',
-    'events_networksettings_withdrawalfeeppmupdated_csv',
-    'events_pendingwithdrawals_withdrawalcancelled_csv',
-    'events_pendingwithdrawals_withdrawalcompleted_csv',
-    'events_pendingwithdrawals_withdrawalcurrentpending_csv',
-    'events_pendingwithdrawals_withdrawalinitiated_csv',
-    'events_poolcollection_defaulttradingfeeppmupdated_csv',
-    'events_poolcollection_depositingenabled_csv',
-    'events_poolcollection_tokensdeposited_csv',
-    'events_poolcollection_tokenswithdrawn_csv',
-    'events_poolcollection_totalliquidityupdated_csv',
-    'events_poolcollection_tradingenabled_csv',
-    'events_poolcollection_tradingfeeppmupdated_csv',
-    'events_poolcollection_tradingliquidityupdated_csv',
-    'events_pooldata_historical_latest_csv',
-    'events_stakingrewardsclaim_rewardsclaimed_csv',
-    'events_stakingrewardsclaim_rewardsstaked_csv',
-    'events_standardrewards_programcreated_csv',
-    'events_standardrewards_programenabled_csv',
-    'events_standardrewards_programterminated_csv',
-    'events_standardrewards_providerjoined_csv',
-    'events_standardrewards_providerleft_csv',
-    'events_standardrewards_rewardsclaimed_csv',
-    'events_standardrewards_rewardsstaked_csv',
-    'events_v3_daily_bnttradingliquidity_csv',
-    'events_v3_historical_deficit_by_tkn_csv',
-    'events_v3_historical_deficit_csv',
-    'events_v3_historical_spotrates_emarates_csv',
-    'events_v3_historical_tradingliquidity_csv'
+ 'events_all_tokensdeposited_csv',
+ 'events_bancornetwork_flashloancompleted_csv',
+ 'events_bancornetwork_fundsmigrated_csv',
+ 'events_bancornetwork_networkfeeswithdrawn_csv',
+ 'events_bancornetwork_pooladded_csv',
+ 'events_bancornetwork_poolcollectionadded_csv',
+ 'events_bancornetwork_poolcollectionremoved_csv',
+ 'events_bancornetwork_poolcreated_csv',
+ 'events_bancornetwork_poolremoved_csv',
+ 'events_bancornetwork_tokenstraded_csv',
+ 'events_bancornetwork_tokenstraded_updated_csv',
+ 'events_bancorportal_sushiswappositionmigrated_csv',
+ 'events_bancorportal_uniswapv2positionmigrated_csv',
+ 'events_bancorv1migration_positionmigrated_csv',
+ 'events_bntpool_fundingrenounced_csv',
+ 'events_bntpool_fundingrequested_csv',
+ 'events_bntpool_fundsburned_csv',
+ 'events_bntpool_fundswithdrawn_csv',
+ 'events_bntpool_tokensdeposited_csv',
+ 'events_bntpool_tokenswithdrawn_csv',
+ 'events_bntpool_totalliquidityupdated_csv',
+ 'events_combined_tokenstraded_daily_fees_csv',
+ 'events_combined_tokenstraded_daily_volume_csv',
+ 'events_externalprotectionvault_fundsburned_csv',
+ 'events_externalprotectionvault_fundswithdrawn_csv',
+ 'events_externalrewardsvault_fundsburned_csv',
+ 'events_externalrewardsvault_fundswithdrawn_csv',
+ 'events_mastervault_fundsburned_csv',
+ 'events_mastervault_fundswithdrawn_csv',
+ 'events_networksettings_defaultflashloanfeeppmupdated_csv',
+ 'events_networksettings_flashloanfeeppmupdated_csv',
+ 'events_networksettings_fundinglimitupdated_csv',
+ 'events_networksettings_minliquidityfortradingupdated_csv',
+ 'events_networksettings_tokenaddedtowhitelist_csv',
+ 'events_networksettings_tokenremovedfromwhitelist_csv',
+ 'events_networksettings_vortexburnrewardupdated_csv',
+ 'events_networksettings_withdrawalfeeppmupdated_csv',
+ 'events_pendingwithdrawals_withdrawalcancelled_csv',
+ 'events_pendingwithdrawals_withdrawalcompleted_csv',
+ 'events_pendingwithdrawals_withdrawalcurrentpending_csv',
+ 'events_pendingwithdrawals_withdrawalinitiated_csv',
+ 'events_poolcollection_defaulttradingfeeppmupdated_csv',
+ 'events_poolcollection_depositingenabled_csv',
+ 'events_poolcollection_tokensdeposited_csv',
+ 'events_poolcollection_tokenswithdrawn_csv',
+ 'events_poolcollection_totalliquidityupdated_csv',
+ 'events_poolcollection_tradingenabled_csv',
+ 'events_poolcollection_tradingfeeppmupdated_csv',
+ 'events_poolcollection_tradingliquidityupdated_csv',
+ 'events_poolcollection_tradingliquidityupdated_spotrates_csv',
+ 'events_pooldata_historical_latest_csv',
+ 'events_stakingrewardsclaim_rewardsclaimed_csv',
+ 'events_stakingrewardsclaim_rewardsstaked_csv',
+ 'events_standardrewards_programcreated_csv',
+ 'events_standardrewards_programenabled_csv',
+ 'events_standardrewards_programterminated_csv',
+ 'events_standardrewards_providerjoined_csv',
+ 'events_standardrewards_providerleft_csv',
+ 'events_standardrewards_rewardsclaimed_csv',
+ 'events_standardrewards_rewardsstaked_csv',
+ 'events_trade_slippage_stats_csv',
+ 'events_v3_daily_bnttradingliquidity_csv',
+ 'events_v3_historical_deficit_by_tkn_csv',
+ 'events_v3_historical_deficit_csv',
+ 'events_v3_historical_spotrates_emarates_csv',
+ 'events_v3_historical_tradingliquidity_csv'
 ]
 
 UNUSED_EVENTS = [
@@ -149,12 +151,14 @@ UNUSED_EVENTS = [
     'events_standardrewards_rewardsclaimed_csv',
     'events_standardrewards_rewardsstaked_csv',
     'events_poolcollection_tradingliquidityupdated_spotrates_csv',
+    'events_bancornetwork_tokenstraded_updated_csv',
 ]
 
 
 # COMMAND ----------
 
 data_dictionary = get_data_dictionary()
+data_dictionary.to_csv('/dbfs/FileStore/tables/onchain_events/data_dictionary.csv')
 data_dictionary
 
 # COMMAND ----------
@@ -246,10 +250,13 @@ combined_df
 
 # COMMAND ----------
 
-import mlflow
-# Log to mlflow for easy download reference
-combined_df.to_csv('/dbfs/FileStore/tables/combined_df.csv', index=False)
-mlflow.log_artifact('/dbfs/FileStore/tables/combined_df.csv')
+# import mlflow
+
+# mlflow.set_experiment("update_google_sheets")
+
+# # Log to mlflow for easy download reference
+# combined_df.to_csv('/dbfs/FileStore/tables/combined_df.csv', index=False)
+# mlflow.log_artifact('/dbfs/FileStore/tables/combined_df.csv')
 
 # COMMAND ----------
 
