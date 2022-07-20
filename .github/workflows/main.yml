@@ -21,4 +21,4 @@ jobs:
         DATABRICKS_REPO_ID: $(DATABRICKS_REPO_ID)
       run: |
         python -m pip install --upgrade databricks-cli
-        databricks repos update --repo-id "DATABRICKS_REPO_ID" --branch main
+        databricks repos update --repo-id "$DATABRICKS_REPO_ID" --branch main
