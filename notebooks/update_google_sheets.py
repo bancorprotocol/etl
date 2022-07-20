@@ -24,6 +24,10 @@ Updates require 30+ minutes to complete once started.
 
 # COMMAND ----------
 
+# MAGIC %reload_ext autoreload
+
+# COMMAND ----------
+
 !cp ../requirements.txt ~/.
 %pip install -r ~/requirements.txt
 
