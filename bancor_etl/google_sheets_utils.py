@@ -100,7 +100,7 @@ def handle_google_sheets(clean_table_name: str,
         sheet = wb.worksheet_by_title(sheet_title)
         print(f"Opened spreadsheet with id:{sheet_title}")
 
-    except pygsheets.SpreadsheetNotFound as error:
+    except pygsheets.WorksheetNotFound as error:
         # Can't find it and so create it
         res = gc.sheet.create(sheet_title)
         sheet_id = res['spreadsheetId']
