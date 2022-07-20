@@ -11,6 +11,7 @@ from typing import Tuple
 import pandas as pd
 import pygsheets
 from sklearn.preprocessing import OrdinalEncoder
+
 from bancor_etl.constants import *
 
 
@@ -107,12 +108,7 @@ def handle_google_sheets(clean_table_name: str,
         print(f"Created spreadsheet with id:{sheet.id} and url:{sheet.url}")
 
         # Share with self to allow to write to it
-        if FORCE_RATE_THROTTLE:
-            time.sleep(SLEEP_TIME)
         sheet.share(ETL_ROBOT_EMAIL, role='writer', type='user')
-
-        if FORCE_RATE_THROTTLE:
-            time.sleep(SLEEP_TIME)
         sheet.share(ETL_USER_EMAIL, role='writer', type='user')
 
         # Share to all for reading
