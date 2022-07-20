@@ -20,5 +20,5 @@ jobs:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       run: |
         python -m pip install --upgrade databricks-cli
-        databricks repos update --path /Repos/etl/prod --branch "main"
-        databricks repos update --path /Repos/etl/staging --branch "staging"
+        databricks repos update --path /Repos/etl/prod --branch main
+        databricks repos update --path /Repos/etl/staging --branch staging
