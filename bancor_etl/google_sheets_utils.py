@@ -12,7 +12,7 @@ import pandas as pd
 import pygsheets
 from sklearn.preprocessing import OrdinalEncoder
 
-from bancor_etl.constants import *
+from .constants import *
 
 
 def get_pandas_df(spark, table_name: str) -> pd.DataFrame:
@@ -65,16 +65,15 @@ def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
     gc = handle_google_sheets_auth()
 
     # Try to open the Google sheet based on its title and if it fails, create it
-    sheet_titles = ['all_events_' + str(n) for n in range(num_chunks, max_search)]
-    for title in sheet_titles:
-        try:
-            wb = gc.open(title)
-            gc.drive.delete(wb.id)
-            print(f"Deleted spreadsheet with title:{title}")
+    keep_titles = ['all_events_' + str(n) for n in range(num_chunks)]
+    keep_titles.append('data_dictionary')
 
-        except:
+    spreadsheets = gc.spreadsheet_titles()
+    delete_titles = [item for item in spreadsheets if item not in keep_titles]
 
-            print('Cant find it or insufficient permissions to delete it')
+    for sheet_title in delete_titles:
+        wb = gc.open(sheet_title)
+        gc.drive.delete(wb.id)
 
 
 def handle_google_sheets(clean_table_name: str,
@@ -100,24 +99,27 @@ def handle_google_sheets(clean_table_name: str,
         sheet = wb.worksheet_by_title(sheet_title)
         print(f"Opened spreadsheet with id:{sheet_title}")
 
-    except pygsheets.SpreadsheetNotFound as error:
+    except pygsheets.WorksheetNotFound as error:
         # Can't find it and so create it
         res = gc.sheet.create(sheet_title)
         sheet_id = res['spreadsheetId']
         sheet = gc.open_by_key(sheet_id)
         print(f"Created spreadsheet with id:{sheet.id} and url:{sheet.url}")
 
+        wb = gc.open(sheet_title)
+
         # Share with self to allow to write to it
-        sheet.share(ETL_ROBOT_EMAIL, role='writer', type='user')
-        sheet.share(ETL_USER_EMAIL, role='writer', type='user')
+        wb.share(ETL_ROBOT_EMAIL, role='writer', type='user')
+        wb.share(ETL_USER_EMAIL, role='writer', type='user')
 
         # Share to all for reading
-        sheet.share('', role='reader', type='anyone')
-        sheet.add_worksheet(sheet_title,
-                            rows=num_rows,
-                            cols=num_cols)
+        wb.share('', role='reader', type='anyone')
+
+        wb.add_worksheet(sheet_title,
+                         rows=num_rows,
+                         cols=num_cols)
+
         # open the sheet by name
-        wb = gc.open(sheet_title)
         sheet = wb.worksheet_by_title(sheet_title)
 
     sheet.resize(num_rows, num_cols)
