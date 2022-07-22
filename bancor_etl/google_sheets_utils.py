@@ -220,6 +220,7 @@ def handle_types_and_missing_values(pdf: pd.DataFrame,
 
     for col in default_value_map:
         if col in pdf.columns:
+            pdf[col] = pdf[col].replace([np.inf, -np.inf], np.nan)
             default_value = default_value_map[col]
             pdf[col] = pdf[col].fillna(default_value)
             col_type = type_map[
