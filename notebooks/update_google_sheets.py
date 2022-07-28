@@ -12,7 +12,7 @@ Adding new tables:
 * Add the table name to the list of tables in CMD 5 in this notebook.
 
 Adding new columns:
-* Update the data dictionary with new column and type in google sheets:
+* Update the data dictionary with new column and type in google sheets: 
 
 Updates require 30+ minutes to complete once started.
 """
