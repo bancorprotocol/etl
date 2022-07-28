@@ -3,8 +3,8 @@
 Instructions:
 
 Updating the PoolCollection:
-* Upload the new protocol jsons folder to '/dbfs/FileStore/tables/'
-* In CMD 3: Update the `path` to this jsons folder 
+* Upload the new protocol jsons folder to '/dbfs/FileStore/tables/' as ETL_PROTOCOL_JSON_DIRECTORY
+* In CMD 3: Update the `ETL_PROTOCOL_JSON_DIRECTORY` to this jsons folder 
 * In CMD 11: Add a new contract dictionary for the new PoolCollectionTypeXVX using `load_contract`
 * In CMD 11: Update the `PoolCollection` dictionary to the latest PoolCollection number
 * In CMD 11: Add the new PoolCollectionTypeXVX dictionary to the `PoolCollectionSet`
@@ -35,8 +35,6 @@ from bancor_etl.constants import *
 
 # COMMAND ----------
 
-path = '/dbfs/FileStore/tables/nwmodified-tenderly10/'
-writepath = '/dbfs/FileStore/tables/onchain_events/'
 url = f'https://eth-mainnet.alchemyapi.io/v2/{ETL_ALCHEMY_APIKEY}'
 
 # COMMAND ----------
@@ -136,7 +134,7 @@ def get_pool_token_balance(poolTokenContracts, wallet_address):
 
 def update_tokenInfo():
     tknAddresses = NetworkSettings['contract'].functions.protectedTokenWhitelist().call()
-    tokenInfo = pd.read_csv(writepath+'tokenInfo.csv', index_col=0)
+    tokenInfo = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'tokenInfo.csv', index_col=0)
 
     missingAddresses = list(set(tknAddresses) - set(tokenInfo.tokenAddress)) 
     missingContracts = [get_token_contract(x) for x in missingAddresses]
@@ -149,14 +147,14 @@ def update_tokenInfo():
     tokenInfo2 = tokenInfo.append(missingdf)
     tokenInfo2.sort_values(by='symbol', inplace=True)
     tokenInfo2.reset_index(inplace=True, drop=True)
-    tokenInfo2.to_csv(writepath+'tokenInfo.csv')
+    tokenInfo2.to_csv(ETL_CSV_STORAGE_DIRECTORY+'tokenInfo.csv')
     return(tokenInfo2)
 
 # COMMAND ----------
 
 def update_blockNumber_to_timestamp():
     currentBlock = w3.eth.get_block('latest')
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blocks = list(range(blockNumber_to_timestamp.blockNumber.max(),currentBlock['number']))
     timestamps = [int(w3.eth.getBlock(x).timestamp) for x in blocks]
     times = [datetime.datetime.fromtimestamp(x).astimezone(datetime.timezone.utc) for x in timestamps]
@@ -164,14 +162,14 @@ def update_blockNumber_to_timestamp():
     df = df[~df.timestamp.duplicated()].copy()
     df.sort_values(by='timestamp', inplace=True)
     df.reset_index(inplace=True, drop=True)
-    df.to_csv(writepath+'blockNumber_to_timestamp.csv')
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv')
 
 # COMMAND ----------
 
 def update_maxpositions():
-    maxpositionsdf = pd.read_csv(writepath+"positions.csv")
+    maxpositionsdf = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"positions.csv")
     maxpositionsdf.fillna(method='ffill', inplace=True)  ## note this messes up the blocknumber
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp['day'] = [str(blockNumber_to_timestamp.time[i])[:10] for i in blockNumber_to_timestamp.index]
     btts = pd.merge(blockNumber_to_timestamp, maxpositionsdf[['day', 'max_position']], how='left', on='day')
     btts.fillna(method='ffill', inplace=True)
@@ -182,16 +180,16 @@ def update_maxpositions():
     maxpositionsdf = maxpositionsdf[~maxpositionsdf.day.isin(daylist)].append(btts)
     maxpositionsdf.rename(columns = {'block_number':'blocknumber'}, inplace=True)
     maxpositionsdf.reset_index(inplace=True, drop=True)
-    maxpositionsdf.to_csv(writepath+'maxpositionsdf.csv')
+    maxpositionsdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'maxpositionsdf.csv')
 
 # COMMAND ----------
 
 def load_contract(base_contract_string):
-    proxy_file = path+"/"+base_contract_string+"_Proxy.json"
-    implementation_file = path+"/"+base_contract_string+"_Implementation.json"
-    standard_file = path+"/"+base_contract_string+".json"
+    proxy_file = ETL_PROTOCOL_JSON_DIRECTORY+"/"+base_contract_string+"_Proxy.json"
+    implementation_file = ETL_PROTOCOL_JSON_DIRECTORY+"/"+base_contract_string+"_Implementation.json"
+    standard_file = ETL_PROTOCOL_JSON_DIRECTORY+"/"+base_contract_string+".json"
     
-    if os.path.exists(proxy_file): 
+    if os.ETL_PROTOCOL_JSON_DIRECTORY.exists(proxy_file): 
         g = open(proxy_file)
         proxy_contract_data = json.load(g)
         addy = w3.toChecksumAddress(proxy_contract_data['address'])
@@ -202,7 +200,7 @@ def load_contract(base_contract_string):
         addy = w3.toChecksumAddress(standard_contract_data['address'])
         f.close() 
         
-    if os.path.exists(implementation_file):
+    if os.ETL_PROTOCOL_JSON_DIRECTORY.exists(implementation_file):
         f = open(implementation_file)
         impl_contract_data = json.load(f)
         abi = impl_contract_data['abi']
@@ -485,15 +483,15 @@ fromBlock = 14609000
 # COMMAND ----------
 
 def update_PoolCollection_events():
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     toBlock = int(blockNumber_to_timestamp.blockNumber.max())
 
     for name_of_event in ["DefaultTradingFeePPMUpdated", "DepositingEnabled", "TokensDeposited", "TokensWithdrawn",
                          "TotalLiquidityUpdated", "TradingEnabled", "TradingFeePPMUpdated", "TradingLiquidityUpdated"]:    
     
-        filepath = writepath+f'Events_PoolCollection_{str(name_of_event)}.csv'
-        if os.path.isfile(filepath):
-            master = pd.read_csv(filepath, index_col=0, dtype=str)
+        file_location = ETL_CSV_STORAGE_DIRECTORY+f'Events_PoolCollection_{str(name_of_event)}.csv'
+        if os.ETL_PROTOCOL_JSON_DIRECTORY.isfile(file_location):
+            master = pd.read_csv(file_location, index_col=0, dtype=str)
             if len(master) != 0:
                 fromBlock = int(master.blocknumber.max())
             else:
@@ -554,20 +552,20 @@ def update_PoolCollection_events():
         master = master[~master.duplicated()].copy()
         master.reset_index(inplace=True, drop=True)
         master = master.astype(str)
-        master.to_csv(filepath)
+        master.to_csv(file_location)
 
     return()
 
 # COMMAND ----------
 
 def update_TEMPLATE_events(contract, name_of_event):
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     toBlock = int(blockNumber_to_timestamp.blockNumber.max())
     name_of_contract = contract['name']
         
-    filepath = writepath+f'Events_{str(name_of_contract)}_{str(name_of_event)}.csv'
-    if os.path.isfile(filepath):
-        master = pd.read_csv(filepath, index_col=0, dtype=str)
+    file_location = ETL_CSV_STORAGE_DIRECTORY+f'Events_{str(name_of_contract)}_{str(name_of_event)}.csv'
+    if os.ETL_PROTOCOL_JSON_DIRECTORY.isfile(file_location):
+        master = pd.read_csv(file_location, index_col=0, dtype=str)
         if len(master) != 0:
             fromBlock = int(master.blocknumber.max())
         else:
@@ -621,7 +619,7 @@ def update_TEMPLATE_events(contract, name_of_event):
     master = master[~master.duplicated()].copy()
     master.reset_index(inplace=True, drop=True)
     master = master.astype(str)
-    master.to_csv(filepath)
+    master.to_csv(file_location)
 
     return(master)
 
@@ -641,7 +639,7 @@ update_PoolCollection_events()
 # DBTITLE 1,Create *_real amounts etc.
 # Specific for PC TokensWithdrawn
 for stringdf in ["Events_PoolCollection_TokensWithdrawn"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     df.loc[:,'tokenAmount_real'] = [Decimal(df.loc[i,'tokenAmount']) / Decimal('10')**Decimal(df.tokenDecimals[i]) for i in df.index]
     df.loc[:,'poolTokenAmount_real'] = [Decimal(df.loc[i,'poolTokenAmount']) / Decimal('10')**Decimal(df.tokenDecimals[i]) for i in df.index]
     df.loc[:,'baseTokenAmount_real'] = [Decimal(df.loc[i,'baseTokenAmount']) / Decimal('10')**Decimal(df.tokenDecimals[i]) for i in df.index]
@@ -651,12 +649,12 @@ for stringdf in ["Events_PoolCollection_TokensWithdrawn"]:
     df = df[~df.duplicated()].copy()
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
     
 
 # Specific for BN TokensTraded
 for stringdf in ["Events_BancorNetwork_TokensTraded"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     df.loc[:,'sourceAmount_real'] = [Decimal(df.loc[i,'sourceAmount']) / Decimal('10')**Decimal(df.sourceDecimals[i]) for i in df.index]
     df.loc[:,'targetAmount_real'] = [Decimal(df.loc[i,'targetAmount']) / Decimal('10')**Decimal(df.targetDecimals[i]) for i in df.index]
     df.loc[:,'targetFeeAmount_real'] = [Decimal(df.loc[i,'targetFeeAmount']) / Decimal('10')**Decimal(df.targetDecimals[i]) for i in df.index]
@@ -665,12 +663,12 @@ for stringdf in ["Events_BancorNetwork_TokensTraded"]:
     df = df[~df.duplicated()].copy()
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
 
 
 # Specific for rewards to rewardsDecimals
 for stringdf in ["Events_StandardRewards_ProgramCreated"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     for col in df.columns:
         if "_real" not in col:
             for label in ['totalRewards']:
@@ -681,12 +679,12 @@ for stringdf in ["Events_StandardRewards_ProgramCreated"]:
     df = df[~df.duplicated()].copy()
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
     
     
 # Specific for rewards to 18
 for stringdf in ["Events_StandardRewards_ProgramEnabled", "Events_StandardRewards_ProgramTerminated"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     for col in df.columns:
         if "_real" not in col:
             for label in ["remainingRewards", ]:
@@ -697,13 +695,13 @@ for stringdf in ["Events_StandardRewards_ProgramEnabled", "Events_StandardReward
     df = df[~df.duplicated()].copy()
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
     
     
     
 # When many amount map to tokenDecimals
 for stringdf in ["Events_BancorNetwork_FundsMigrated", "Events_ExternalProtectionVault_FundsWithdrawn", "Events_MasterVault_FundsBurned", "Events_MasterVault_FundsWithdrawn", "Events_PoolCollection_TokensDeposited", "Events_PoolCollection_TradingLiquidityUpdated"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     for col in df.columns:
         if "_real" not in col:
             for label in ['mount', 'iquidity']:
@@ -714,12 +712,12 @@ for stringdf in ["Events_BancorNetwork_FundsMigrated", "Events_ExternalProtectio
     df = df[~df.duplicated()].copy()
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
 
     
 # When many amount map to poolDecimals
 for stringdf in ["Events_PoolCollection_TotalLiquidityUpdated", "Events_StandardRewards_ProviderJoined", "Events_StandardRewards_ProviderLeft", "Events_PendingWithdrawals_WithdrawalInitiated", "Events_PendingWithdrawals_WithdrawalCompleted", "Events_PendingWithdrawals_WithdrawalCancelled"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     for col in df.columns:
         if "_real" not in col:
             for label in ['mount', 'iquidity', 'stakedBalance', 'poolTokenSupply', "Limit", 'remainingStake']:
@@ -730,14 +728,14 @@ for stringdf in ["Events_PoolCollection_TotalLiquidityUpdated", "Events_Standard
     df = df[~df.duplicated()].copy()
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
 
     
 # When all decimals are 18
 for stringdf in ["Events_BNTPool_FundingRenounced", "Events_BNTPool_FundingRequested", "Events_BNTPool_TokensDeposited", "Events_BNTPool_TokensWithdrawn", "Events_BNTPool_TotalLiquidityUpdated",
                  "Events_NetworkSettings_FundingLimitUpdated", "Events_NetworkSettings_MinLiquidityForTradingUpdated", "Events_NetworkSettings_VortexBurnRewardUpdated", "Events_StakingRewardsClaim_RewardsClaimed",
                 "Events_StakingRewardsClaim_RewardsStaked", "Events_StandardRewards_RewardsClaimed", "Events_StandardRewards_RewardsStaked"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     for col in df.columns:
         if "_real" not in col:
             for label in ['mount', 'iquidity', 'stakedBalance', 'poolTokenSupply', "Limit"]:
@@ -748,19 +746,19 @@ for stringdf in ["Events_BNTPool_FundingRenounced", "Events_BNTPool_FundingReque
     df = df[~df.duplicated()].copy()
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
 
 
 # COMMAND ----------
 
-eventsfiles = glob.glob(writepath+'Events_**')
+eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
 print(len(eventsfiles))
 eventsfiles
 
 # COMMAND ----------
 
 def repair_missing_times(eventsfiles):
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     blockNumber_to_timestamp.blocknumber = blockNumber_to_timestamp.blocknumber.astype(int)
     filter_out = ['/dbfs/FileStore/tables/onchain_events/Events_poolData_Historical_latest.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_daily_bntTradingLiquidity.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_historical_deficit_by_tkn.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_historical_spotRates_emaRates.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_historical_tradingLiquidity.csv']
@@ -809,12 +807,12 @@ repair_missing_times(eventsfiles)
 
 def get_updatePriceData(tokenSymbol):
     
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     
     tokenSymbol = tokenSymbol.upper()
     print(f"Updating {tokenSymbol} prices...")
-    mdf = pd.read_csv(writepath+f'HistoricalPriceData_{tokenSymbol}.csv', index_col=0)
+    mdf = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_{tokenSymbol}.csv', index_col=0)
 #     currentBlock = w3.eth.get_block('latest')
     final = blockNumber_to_timestamp.timestamp.iloc[-1]
     init = mdf.time.iloc[-1]
@@ -843,7 +841,7 @@ def get_updatePriceData(tokenSymbol):
     mdf = mdf[~mdf.duplicated()].copy()
     mdf.reset_index(inplace=True, drop=True)
     mdf = mdf.astype(str)
-    mdf.to_csv(writepath+f'HistoricalPriceData_{tokenSymbol}.csv')
+    mdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_{tokenSymbol}.csv')
     print(len(mdf))
 
 # COMMAND ----------
@@ -866,7 +864,7 @@ def update_daily_bntprices():
     prices.loc[:,'day'] = [datetime.datetime.fromtimestamp(x) for x in prices.timestamp]
     prices.set_index('day', inplace=True)
     prices = prices.astype(str)
-    prices.to_csv(writepath+'cg_daily_bntprices.csv')
+    prices.to_csv(ETL_CSV_STORAGE_DIRECTORY+'cg_daily_bntprices.csv')
 
 # COMMAND ----------
 
@@ -875,16 +873,16 @@ update_daily_bntprices()
 # COMMAND ----------
 
 def create_historical_pool_spotrates():
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     
-    bntprices = pd.read_csv(writepath+f'HistoricalPriceData_BNT.csv')
+    bntprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_BNT.csv')
     bntprices = bntprices[['time', 'close']].copy()
     bntprices.columns = ['timestamp','price']
     bntprices.timestamp = bntprices.timestamp.astype(int)
     bntprices.loc[:,'price'] = [Decimal(x) for x in bntprices.price]
     
-    Events_PoolCollection_TradingLiquidityUpdated = pd.read_csv(writepath+"Events_PoolCollection_TradingLiquidityUpdated.csv", index_col = 0, dtype = str)
+    Events_PoolCollection_TradingLiquidityUpdated = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_PoolCollection_TradingLiquidityUpdated.csv", index_col = 0, dtype = str)
     for col in ['newLiquidity_real']:
         Events_PoolCollection_TradingLiquidityUpdated.loc[:,col] = Events_PoolCollection_TradingLiquidityUpdated.loc[:,col].apply(lambda x: Decimal(str(x)))
     Events_PoolCollection_TradingLiquidityUpdated.blocknumber = Events_PoolCollection_TradingLiquidityUpdated.blocknumber.astype(int)
@@ -938,7 +936,7 @@ def create_historical_pool_spotrates():
     newmtl.reset_index(inplace=True, drop=True)
 
     newmtl = newmtl.astype(str)
-    newmtl.to_csv(writepath+"PoolCollection_TradingLiquidityUpdated_SpotRates.csv")
+    newmtl.to_csv(ETL_CSV_STORAGE_DIRECTORY+"PoolCollection_TradingLiquidityUpdated_SpotRates.csv")
 
 # COMMAND ----------
 
@@ -947,16 +945,16 @@ create_historical_pool_spotrates()
 # COMMAND ----------
 
 def create_updated_TokensTraded_table():
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     
-    bntprices = pd.read_csv(writepath+f'HistoricalPriceData_BNT.csv')
+    bntprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_BNT.csv')
     bntprices = bntprices[['time', 'close']].copy()
     bntprices.time = bntprices.time.astype(int)
     bntprices.set_index('time', inplace=True)
     bntprices.columns = ['price']
     
-    Events_BancorNetwork_TokensTraded = pd.read_csv(writepath+"Events_BancorNetwork_TokensTraded.csv", index_col = 0, dtype = str)
+    Events_BancorNetwork_TokensTraded = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_BancorNetwork_TokensTraded.csv", index_col = 0, dtype = str)
     for col in ['sourceAmount_real',  'targetAmount_real', 'targetFeeAmount_real','bntAmount_real', 'bntFeeAmount_real']:
         Events_BancorNetwork_TokensTraded.loc[:,col] = Events_BancorNetwork_TokensTraded.loc[:,col].apply(lambda x: Decimal(str(x)))
     Events_BancorNetwork_TokensTraded.blocknumber = Events_BancorNetwork_TokensTraded.blocknumber.astype(int)
@@ -964,7 +962,7 @@ def create_updated_TokensTraded_table():
     
     # create a useful dictionary to parse the spotrates
     TL_dict = {}
-    mtl2 = pd.read_csv(writepath+"PoolCollection_TradingLiquidityUpdated_SpotRates.csv", index_col=0, dtype=str)
+    mtl2 = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"PoolCollection_TradingLiquidityUpdated_SpotRates.csv", index_col=0, dtype=str)
     for col in ['spotRate']:
         mtl2.loc[:,col] = mtl2.loc[:,col].apply(lambda x: Decimal(str(x)))
     mtl2.blocknumber = mtl2.blocknumber.astype(int)
@@ -1020,7 +1018,7 @@ def create_updated_TokensTraded_table():
     Events_BancorNetwork_TokensTraded.loc[:,'actualTotalFees_real_usd'] = Events_BancorNetwork_TokensTraded.actualTotalFees_real_bnt * Events_BancorNetwork_TokensTraded.bntprice
 
     Events_BancorNetwork_TokensTraded = Events_BancorNetwork_TokensTraded.astype(str)
-    Events_BancorNetwork_TokensTraded.to_csv(writepath+"Events_BancorNetwork_TokensTraded_Updated.csv")
+    Events_BancorNetwork_TokensTraded.to_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_BancorNetwork_TokensTraded_Updated.csv")
     
     return()
 
@@ -1032,15 +1030,15 @@ create_updated_TokensTraded_table()
 
 # DBTITLE 1,V3 Historical PoolData Stats
 def update_daily_poolData_historical():  #oold version in the Events Curator
-    maxpositionsdf = pd.read_csv(writepath+'maxpositionsdf.csv', index_col=0)  
+    maxpositionsdf = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'maxpositionsdf.csv', index_col=0)  
     maxpositionsdf.blocknumber = maxpositionsdf.blocknumber.astype(int)
     maxpositionsdf.sort_values(by='blocknumber', ascending=False, inplace=True)
     maxpositionsdf.set_index('blocknumber', inplace=True)
     dayinfo = maxpositionsdf.copy()
 
-    cgprices = pd.read_csv(writepath+'cg_daily_bntprices.csv', index_col=0) 
+    cgprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'cg_daily_bntprices.csv', index_col=0) 
 
-    all_files = glob.glob(writepath+f'poolData_Historical_20*')
+    all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_20*')
     all_files = [x for x in all_files if 'latest' not in x]
     previous_day = all_files[-1].split('_')[-1].split('.')[0]
     unrecorded_days = [x for x in dayinfo.day if x>previous_day]
@@ -1225,15 +1223,15 @@ def update_daily_poolData_historical():  #oold version in the Events Curator
         sdf.fillna('0', inplace=True)
         sdf.replace('NaN', '0', inplace=True)
         sdf = sdf.astype(str)
-        sdf.to_csv(writepath+f'poolData_Historical_{day}.csv')
+        sdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_{day}.csv')
 
 
     # overwrite the latest data
-    all_files = glob.glob(writepath+f'poolData_Historical_20*')
+    all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_20*')
     all_files = [x for x in all_files if 'latest' not in x]
     df = pd.read_csv(all_files[-1], index_col=0, dtype=str)
     df.rename(columns = {'symbol':'poolSymbol', 'day': 'time'}, inplace=True)
-    df.to_csv(writepath+f'Events_poolData_Historical_latest.csv')
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f'Events_poolData_Historical_latest.csv')
 
 # COMMAND ----------
 
@@ -1242,14 +1240,14 @@ update_daily_poolData_historical()
 # COMMAND ----------
 
 def get_v3_historical_deficit():
-    all_files = glob.glob(writepath+f'*poolData_Historical_20*')
+    all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
     all_files = [x for x in all_files if 'latest' not in x]
     infor = []
     for file in all_files:
         df = pd.read_csv(file, index_col=0)
         infor += [(df.iloc[0]['time'] ,df.surplus_bnt.sum(), df.surplus_usd.sum())]
     infordf = pd.DataFrame(infor, columns = ['time', 'v3_surplus_bnt', 'v3_surplus_usd'])
-    infordf.to_csv(writepath+'Events_v3_historical_deficit.csv')
+    infordf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit.csv')
 
 # COMMAND ----------
 
@@ -1258,7 +1256,7 @@ get_v3_historical_deficit()
 # COMMAND ----------
 
 def get_v3_historical_deficit_by_tkn():
-    all_files = glob.glob(writepath+f'*poolData_Historical_20*')
+    all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
     all_files = [x for x in all_files if 'latest' not in x]
     mdf = pd.DataFrame()
     for file in all_files:
@@ -1266,7 +1264,7 @@ def get_v3_historical_deficit_by_tkn():
         df2 = df[['poolSymbol','blocknumber','time','bntprice', 'surplus_tkn','surplus_bnt','surplus_usd','surplus_perc']].copy()
         mdf = mdf.append(df2)
     mdf = mdf.astype(str)
-    mdf.to_csv(writepath+'Events_v3_historical_deficit_by_tkn.csv')
+    mdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit_by_tkn.csv')
 
 # COMMAND ----------
 
@@ -1275,7 +1273,7 @@ get_v3_historical_deficit_by_tkn()
 # COMMAND ----------
 
 def get_v3_daily_TL():
-    all_files = glob.glob(writepath+f'*poolData_Historical_20*')
+    all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
     all_files = [x for x in all_files if 'latest' not in x]
     historical_tradingLiquidity = pd.DataFrame()
     mdf = pd.DataFrame()
@@ -1287,7 +1285,7 @@ def get_v3_daily_TL():
         df2 = df[['time', 'blocknumber', 'bntTradingLiquidity_real_bnt', 'bntTradingLiquidity_real_usd']].copy()
         mdf = mdf.append(df2)
 
-    historical_tradingLiquidity.to_csv(writepath+'Events_v3_historical_tradingLiquidity.csv')
+    historical_tradingLiquidity.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_tradingLiquidity.csv')
 
     mdf.loc[:,'bntTradingLiquidity_real_bnt'] = [Decimal(x) for x in mdf.bntTradingLiquidity_real_bnt]
     mdf.loc[:,'bntTradingLiquidity_real_usd'] = [Decimal(x) for x in mdf.bntTradingLiquidity_real_usd]
@@ -1298,7 +1296,7 @@ def get_v3_daily_TL():
     historical_tradingLiquidity_sums.reset_index(inplace=True, drop=True)
     historical_tradingLiquidity_sums.loc[:,'bntprice'] = [round(get_safe_divide(historical_tradingLiquidity_sums.bntTradingLiquidity_real_usd[i], historical_tradingLiquidity_sums.bntTradingLiquidity_real_bnt[i]),6) for i in historical_tradingLiquidity_sums.index]
 
-    historical_tradingLiquidity_sums.to_csv(writepath+"Events_v3_daily_bntTradingLiquidity.csv")
+    historical_tradingLiquidity_sums.to_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_v3_daily_bntTradingLiquidity.csv")
 
 # COMMAND ----------
 
@@ -1307,10 +1305,10 @@ get_v3_daily_TL()
 # COMMAND ----------
 
 def get_v3_daily_spotRates_emaRates():
-    cgprices = pd.read_csv(writepath+'cg_daily_bntprices.csv', index_col=0, dtype=str)  #this is updated from coingecko in the Events Curator
+    cgprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'cg_daily_bntprices.csv', index_col=0, dtype=str)  #this is updated from coingecko in the Events Curator
     cgprices.bntprice = [Decimal(x) for x in cgprices.bntprice]
 
-    all_files = glob.glob(writepath+f'*poolData_Historical_20*')
+    all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
     all_files = [x for x in all_files if 'latest' not in x]
     mdf = pd.DataFrame()
     for file in all_files:
@@ -1328,7 +1326,7 @@ def get_v3_daily_spotRates_emaRates():
     mdf.rename(columns = {'day': 'time'}, inplace=True)
     mdf.reset_index(inplace=True, drop=True)
     mdf = mdf.astype(str)
-    mdf.to_csv(writepath+'Events_v3_historical_spotRates_emaRates.csv')
+    mdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_spotRates_emaRates.csv')
 
 # COMMAND ----------
 
@@ -1337,21 +1335,21 @@ get_v3_daily_spotRates_emaRates()
 # COMMAND ----------
 
 # DBTITLE 1,Generate Withdrawals Stats
-WithdrawalInitiated = pd.read_csv(writepath+'Events_PendingWithdrawals_WithdrawalInitiated.csv', index_col = 0, dtype=str)
-WithdrawalCancelled = pd.read_csv(writepath+'Events_PendingWithdrawals_WithdrawalCancelled.csv', index_col = 0, dtype=str)
-WithdrawalCompleted = pd.read_csv(writepath+'Events_PendingWithdrawals_WithdrawalCompleted.csv', index_col = 0, dtype=str)
+WithdrawalInitiated = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_PendingWithdrawals_WithdrawalInitiated.csv', index_col = 0, dtype=str)
+WithdrawalCancelled = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_PendingWithdrawals_WithdrawalCancelled.csv', index_col = 0, dtype=str)
+WithdrawalCompleted = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_PendingWithdrawals_WithdrawalCompleted.csv', index_col = 0, dtype=str)
 
 WithdrawalCurrentPending = WithdrawalInitiated[WithdrawalInitiated.requestId.isin(set(WithdrawalInitiated.requestId) - set(WithdrawalCompleted.requestId) - set(WithdrawalCancelled.requestId))].copy()
 WithdrawalCurrentPending.reset_index(inplace=True, drop=True)
-WithdrawalCurrentPending.to_csv(writepath+'Events_PendingWithdrawals_WithdrawalCurrentPending.csv')
+WithdrawalCurrentPending.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_PendingWithdrawals_WithdrawalCurrentPending.csv')
 
-emarates = pd.read_csv(writepath+'Events_poolData_Historical_latest.csv', index_col = 0, dtype=str)
+emarates = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_poolData_Historical_latest.csv', index_col = 0, dtype=str)
 emarates = emarates[['poolSymbol','emaRate','bntprice']].copy()
 emarates.loc[:,'emaRate'] = [Decimal(x) for x in emarates.emaRate]
 emarates.loc[:,'bntprice'] = [Decimal(x) for x in emarates.bntprice]
 
 for stringdf in ["Events_PendingWithdrawals_WithdrawalInitiated", "Events_PendingWithdrawals_WithdrawalCancelled", "Events_PendingWithdrawals_WithdrawalCompleted", "Events_PendingWithdrawals_WithdrawalCurrentPending"]:
-    df = pd.read_csv(writepath+f"{stringdf}.csv", index_col = 0, dtype = str)
+    df = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv", index_col = 0, dtype = str)
     df.drop(['emaRate', 'bntprice', 'reserveTokenAmount_real_bnt', 'reserveTokenAmount_real_usd'], axis=1, inplace=True)
     df = pd.merge(df, emarates, how='left', on='poolSymbol')
     df = df[~df.duplicated()].copy()
@@ -1360,7 +1358,7 @@ for stringdf in ["Events_PendingWithdrawals_WithdrawalInitiated", "Events_Pendin
     df.loc[:,'reserveTokenAmount_real_bnt'] = df.reserveTokenAmount_real * df.emaRate
     df.loc[:,'reserveTokenAmount_real_usd'] = df.reserveTokenAmount_real_bnt * df.bntprice
     df = df.astype(str)
-    df.to_csv(writepath+f"{stringdf}.csv")
+    df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
 
 # COMMAND ----------
 
@@ -1369,11 +1367,11 @@ def update_basic_poolData():
     # Really I just wanted the historic ema and spot rate for specific blocknumbers, however this requires a call to poolData, so you get all this info for free
     # I think it takes like 25min to run so need to work on an updater for this
 
-    existing = pd.read_csv(writepath+'PoolCollection_TokensDeposited_poolData.csv', index_col = 0, dtype=str)
+    existing = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'PoolCollection_TokensDeposited_poolData.csv', index_col = 0, dtype=str)
     existing.blocknumber = existing.blocknumber.astype(int)
     max_block = existing.blocknumber.max() - 10000
 
-    deposits_tkn = pd.read_csv(writepath+"Events_PoolCollection_TokensDeposited.csv", index_col = 0, dtype=str)
+    deposits_tkn = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_PoolCollection_TokensDeposited.csv", index_col = 0, dtype=str)
     deposits_tkn.blocknumber = deposits_tkn.blocknumber.astype(int)
     deposits_tkn = deposits_tkn[deposits_tkn.blocknumber>=max_block].copy()
 
@@ -1428,7 +1426,7 @@ def update_basic_poolData():
     existing = existing.append(mdf)
     existing = existing[~existing.duplicated()].copy()
     existing = existing.astype(str)
-    existing.to_csv(writepath+'PoolCollection_TokensDeposited_poolData.csv')
+    existing.to_csv(ETL_CSV_STORAGE_DIRECTORY+'PoolCollection_TokensDeposited_poolData.csv')
 
 # COMMAND ----------
 
@@ -1437,7 +1435,7 @@ update_basic_poolData()
 # COMMAND ----------
 
 def get_v3_deposits_table():
-    deposits_bnt = pd.read_csv(writepath+"Events_BNTPool_TokensDeposited.csv", index_col = 0, dtype=str)
+    deposits_bnt = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_BNTPool_TokensDeposited.csv", index_col = 0, dtype=str)
     deposits_bnt.rename(columns = {'bntAmount': 'tokenAmount', 'bntAmount_real': 'tokenAmount_real'}, inplace=True)
     deposits_bnt.loc[:,'token'] = '0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C'
     deposits_bnt.loc[:,'tokenSymbol'] = 'bnt'
@@ -1445,7 +1443,7 @@ def get_v3_deposits_table():
     deposits_bnt.loc[:,'emaRate'] = '1'
     deposits_bnt.loc[:,'spotRate'] = '1'
 
-    deposits_tkn = pd.read_csv(writepath+"Events_PoolCollection_TokensDeposited.csv", index_col = 0, dtype=str)
+    deposits_tkn = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_PoolCollection_TokensDeposited.csv", index_col = 0, dtype=str)
     sub = deposits_tkn[~deposits_tkn.baseTokenAmount.isnull()].copy()
     sub.loc[:,'tokenAmount'] = sub.loc[:,'baseTokenAmount'] 
     sub.loc[:,'tokenAmount_real'] = sub.loc[:,'baseTokenAmount_real'] 
@@ -1456,7 +1454,7 @@ def get_v3_deposits_table():
     deposits_tkn.loc[:,'vbntAmount'] = '0'
     deposits_tkn.loc[:,'vbntAmount_real'] = '0'
 
-    mdf = pd.read_csv(writepath+'PoolCollection_TokensDeposited_poolData.csv', index_col = 0, dtype=str)
+    mdf = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'PoolCollection_TokensDeposited_poolData.csv', index_col = 0, dtype=str)
     deposits_tkn = pd.merge(deposits_tkn, mdf[['blocknumber','emaRate','spotRate']], how='left', left_on = ['blocknumber','tokenSymbol'], right_on=['blocknumber', mdf.index])
     deposits_tkn = deposits_tkn[~deposits_tkn.duplicated()].copy()
 
@@ -1464,7 +1462,7 @@ def get_v3_deposits_table():
     deposits.sort_values(by=['blocknumber','tokenSymbol'], inplace=True)
     deposits.reset_index(inplace=True, drop=True)
     deposits = deposits.astype(str)
-    deposits.to_csv(writepath+"Events_All_TokensDeposited.csv")
+    deposits.to_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_All_TokensDeposited.csv")
 
 # COMMAND ----------
 
@@ -1492,7 +1490,7 @@ def get_v2_trade_data():
     indexes2 = list(tokensTraded_v2[tokensTraded_v2.fromToken == '0xB4EFd85c19999D84251304bDA99E90B92300Bd93'].index)
     tokensTraded_v2.loc[indexes2,'fromSymbol'] = 'RPL[old]'
 
-    blockNumber_to_timestamp = pd.read_csv(writepath+'blockNumber_to_timestamp.csv', index_col=0)
+    blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     blockNumber_to_timestamp.blocknumber = blockNumber_to_timestamp.blocknumber.astype(int)
     max_block = blockNumber_to_timestamp.blocknumber.max()
@@ -1523,7 +1521,7 @@ def get_v2_trade_data():
     tokensTraded_v2.time = [x[:19] for x in tokensTraded_v2.time]
     tokensTraded_v2.reset_index(inplace=True, drop=True)
     tokensTraded_v2 = tokensTraded_v2.astype(str)
-    tokensTraded_v2.to_csv(writepath+'versionTwo_TokensTraded.csv')
+    tokensTraded_v2.to_csv(ETL_CSV_STORAGE_DIRECTORY+'versionTwo_TokensTraded.csv')
 
 # COMMAND ----------
 
@@ -1532,7 +1530,7 @@ get_v2_trade_data()
 # COMMAND ----------
 
 def create_v2_v3_daily_summaries():
-    tokensTraded_v2_daily = pd.read_csv(writepath+'versionTwo_TokensTraded.csv', index_col=0, dtype=str)
+    tokensTraded_v2_daily = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'versionTwo_TokensTraded.csv', index_col=0, dtype=str)
     tokensTraded_v2_daily.loc[:,'day'] = [x[:10] for x in tokensTraded_v2_daily.time]
     for col in ['sourceAmount_real','targetAmount_real','targetAmount_real_bnt','targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']:
         tokensTraded_v2_daily.loc[:,col] = tokensTraded_v2_daily.loc[:,col].apply(lambda x: Decimal(str(x)))
@@ -1546,7 +1544,7 @@ def create_v2_v3_daily_summaries():
     tokensTraded_v2_daily_fees.rename(columns = {'targetSymbol':'poolSymbol','targetFeeAmount_real':'v2_targetFeeAmount_real', 'targetFeeAmount_real_bnt':'v2_targetFeeAmount_real_bnt','targetFeeAmount_real_usd':'v2_targetFeeAmount_real_usd', 'actualTotalFees_real_usd':'v2_actualTotalFees_real_usd'}, inplace=True)
     tokensTraded_v2_daily_fees = tokensTraded_v2_daily_fees[['day','poolSymbol', 'v2_targetFeeAmount_real', 'v2_targetFeeAmount_real_bnt', 'v2_targetFeeAmount_real_usd', 'v2_actualTotalFees_real_usd']].copy()
     # tokensTraded_v2_daily_fees = tokensTraded_v2_daily_fees.astype(str)
-    # tokensTraded_v2_daily_fees.to_csv(writepath+'Events_versionTwo_TokensTraded_daily_fees.csv')
+    # tokensTraded_v2_daily_fees.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_versionTwo_TokensTraded_daily_fees.csv')
 
     uniqueSymbols = sorted(list(set(list(tokensTraded_v2_daily.sourceSymbol) + list(tokensTraded_v2_daily.targetSymbol))))
     uniqueSymbols.remove('bnt')
@@ -1572,10 +1570,10 @@ def create_v2_v3_daily_summaries():
     tokensTraded_v2_daily_volume.rename(columns = {'symbol':'poolSymbol', 'targetAmount_real': 'v2_totalVolume_real', 'targetAmount_real_bnt': 'v2_totalVolume_real_bnt', 'targetAmount_real_usd':'v2_totalVolume_real_usd', 'tx_count':'v2_daily_tx_count'}, inplace=True)
     tokensTraded_v2_daily_volume.reset_index(inplace=True, drop=True)
     # tokensTraded_v2_daily_volume = tokensTraded_v2_daily_volume.astype(str)
-    # tokensTraded_v2_daily_volume.to_csv(writepath+'Events_versionTwo_TokensTraded_daily_volume.csv')
+    # tokensTraded_v2_daily_volume.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_versionTwo_TokensTraded_daily_volume.csv')
 
 
-    tokensTraded_v3_daily = pd.read_csv(writepath+'Events_BancorNetwork_TokensTraded_Updated.csv', index_col=0, dtype=str)
+    tokensTraded_v3_daily = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_BancorNetwork_TokensTraded_Updated.csv', index_col=0, dtype=str)
     tokensTraded_v3_daily.loc[:,'day'] = [x[:10] for x in tokensTraded_v3_daily.time]
     for col in ['sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd', 'targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']:
         tokensTraded_v3_daily.loc[:,col] = tokensTraded_v3_daily.loc[:,col].apply(lambda x: Decimal(str(x)))
@@ -1588,7 +1586,7 @@ def create_v2_v3_daily_summaries():
     tokensTraded_v3_daily_fees.rename(columns = {'targetSymbol':'poolSymbol','targetFeeAmount_real':'v3_targetFeeAmount_real', 'targetFeeAmount_real_bnt':'v3_targetFeeAmount_real_bnt','targetFeeAmount_real_usd':'v3_targetFeeAmount_real_usd', 'actualTotalFees_real_usd':'v3_actualTotalFees_real_usd'}, inplace=True)
     tokensTraded_v3_daily_fees = tokensTraded_v3_daily_fees[['day','poolSymbol', 'v3_targetFeeAmount_real', 'v3_targetFeeAmount_real_bnt', 'v3_targetFeeAmount_real_usd', 'v3_actualTotalFees_real_usd']].copy()
     # tokensTraded_v3_daily_fees = tokensTraded_v3_daily_fees.astype(str)
-    # tokensTraded_v3_daily_fees.to_csv(writepath+'Events_versionThree_TokensTraded_daily_fees.csv')
+    # tokensTraded_v3_daily_fees.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_versionThree_TokensTraded_daily_fees.csv')
 
     uniqueSymbols = sorted(list(set(list(tokensTraded_v3_daily.sourceSymbol) + list(tokensTraded_v3_daily.targetSymbol))))
     uniqueSymbols.remove('bnt')
@@ -1620,19 +1618,19 @@ def create_v2_v3_daily_summaries():
     tokensTraded_v3_daily_volume.rename(columns = {'symbol':'poolSymbol'}, inplace=True)
     tokensTraded_v3_daily_volume.reset_index(inplace=True, drop=True)
     # tokensTraded_v3_daily_volume = tokensTraded_v3_daily_volume.astype(str)
-    # tokensTraded_v3_daily_volume.to_csv(writepath+'Events_versionThree_TokensTraded_daily_volume.csv')
+    # tokensTraded_v3_daily_volume.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_versionThree_TokensTraded_daily_volume.csv')
 
     tokensTraded_combined_daily_volume = pd.merge(tokensTraded_v2_daily_volume,tokensTraded_v3_daily_volume, how='outer', on=['day','poolSymbol'])
     tokensTraded_combined_daily_volume.fillna('0', inplace=True)
     tokensTraded_combined_daily_volume.rename(columns = {'day': 'time'}, inplace=True)
     tokensTraded_combined_daily_volume = tokensTraded_combined_daily_volume.astype(str)
-    tokensTraded_combined_daily_volume.to_csv(writepath+'Events_combined_TokensTraded_daily_volume.csv')
+    tokensTraded_combined_daily_volume.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_combined_TokensTraded_daily_volume.csv')
 
     tokensTraded_combined_daily_fees = pd.merge(tokensTraded_v2_daily_fees,tokensTraded_v3_daily_fees, how='outer', on=['day','poolSymbol'])
     tokensTraded_combined_daily_fees.fillna('0', inplace=True)
     tokensTraded_combined_daily_fees.rename(columns = {'day': 'time'}, inplace=True)
     tokensTraded_combined_daily_fees = tokensTraded_combined_daily_fees.astype(str)
-    tokensTraded_combined_daily_fees.to_csv(writepath+'Events_combined_TokensTraded_daily_fees.csv')
+    tokensTraded_combined_daily_fees.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_combined_TokensTraded_daily_fees.csv')
 
 # COMMAND ----------
 
@@ -1641,8 +1639,8 @@ create_v2_v3_daily_summaries()
 # COMMAND ----------
 
 def get_slippage_stats():
-    tl = pd.read_csv(writepath+'Events_PoolCollection_TradingLiquidityUpdated.csv', index_col=0, dtype=str)
-    Events_BancorNetwork_TokensTraded_Updated = pd.read_csv(writepath+'Events_BancorNetwork_TokensTraded_Updated.csv', index_col=0, dtype=str)
+    tl = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_PoolCollection_TradingLiquidityUpdated.csv', index_col=0, dtype=str)
+    Events_BancorNetwork_TokensTraded_Updated = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_BancorNetwork_TokensTraded_Updated.csv', index_col=0, dtype=str)
     mindf = pd.merge(Events_BancorNetwork_TokensTraded_Updated, tl[['contextId', 'tokenSymbol', 'prevLiquidity_real']], how='left', left_on = ['contextId', 'sourceSymbol'], right_on=['contextId', 'tokenSymbol'])
     mindf = mindf[['time','sourceSymbol', 'sourceAmount_real', 'prevLiquidity_real']].copy()
     mindf.loc[:,'sourceAmount_real'] = [Decimal(x) for x in mindf.sourceAmount_real]
@@ -1650,7 +1648,7 @@ def get_slippage_stats():
     mindf.loc[:,'priceImpact_perc'] =  (((mindf.sourceAmount_real/mindf.prevLiquidity_real) + 1)**2 - 1)
     mindf.loc[:,'slippage_perc'] =  mindf.sourceAmount_real / (mindf.prevLiquidity_real + mindf.sourceAmount_real)
     mindf = mindf.astype(str)
-    mindf.to_csv(writepath+'Events_Trade_Slippage_Stats.csv')
+    mindf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_Trade_Slippage_Stats.csv')
 
 # COMMAND ----------
 
@@ -1658,7 +1656,7 @@ get_slippage_stats()
 
 # COMMAND ----------
 
-eventsfiles = glob.glob(writepath+'Events_**')
+eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
 print("Events Files:",len(eventsfiles))
 cols = []
 for file in eventsfiles:
@@ -1672,7 +1670,7 @@ print("Columns:", len(setcols))
 
 # COMMAND ----------
 
-data_dictionary = pd.read_csv(writepath+'data_dictionary.csv')
+data_dictionary = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'data_dictionary.csv')
 set(setcols) - set(sorted(list(set(data_dictionary.Column))))
 
 # COMMAND ----------
