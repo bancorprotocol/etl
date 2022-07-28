@@ -155,7 +155,6 @@ UNUSED_EVENTS = [
     'events_standardrewards_rewardsclaimed_csv',
     'events_standardrewards_rewardsstaked_csv',
     'events_poolcollection_tradingliquidityupdated_spotrates_csv',
-    'events_bancornetwork_tokenstraded_updated_csv',
 ]
 
 
