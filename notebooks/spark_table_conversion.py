@@ -6,6 +6,7 @@ from bancor_etl.constants import *
 
 eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
 
+
 # COMMAND ----------
 
 # DBTITLE 1,Spark Tables for all "Events"
@@ -17,7 +18,7 @@ for file in eventsfiles:
 
     # File location and type
     file_location = fileloc
-    file_type = "parquet"
+    file_type = "csv"
 
     # CSV options
     infer_schema = "true"
