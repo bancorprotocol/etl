@@ -199,7 +199,7 @@ def add_missing_columns(pdf: pd.DataFrame,
             all_columns.append(col)
     all_columns = [col for col in all_columns if col in pdf.columns]
     pdf = pdf[all_columns]
-    return pdf
+    return pdf, all_columns
 
 
 def concat_dataframes(pdf: pd.DataFrame, combined_df: pd.DataFrame):

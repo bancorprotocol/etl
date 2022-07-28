@@ -222,7 +222,7 @@ for table_name in list_of_spark_tables:
     pdf = add_event_name_column(pdf, clean_table_name)
 
     # Normalizes unique columns across all tables
-    pdf = add_missing_columns(pdf, unique_col_mapping, ALL_COLUMNS)
+    pdf, ALL_COLUMNS = add_missing_columns(pdf, unique_col_mapping, ALL_COLUMNS)
 
     # Combine the dataframes
     combined_df = concat_dataframes(pdf, combined_df)
