@@ -174,7 +174,8 @@ def get_event_mapping(spark,
 
     unique_col_mapping_cp = {}
     for col in all_columns:
-        unique_col_mapping_cp[col] = unique_col_mapping[col]
+        if col in unique_col_mapping:
+            unique_col_mapping_cp[col] = unique_col_mapping[col]
 
     for col in unique_col_mapping_cp:
         combined_df[col] = []
