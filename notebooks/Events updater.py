@@ -202,7 +202,7 @@ def load_contract(base_contract_string):
     implementation_file = ETL_PROTOCOL_JSON_DIRECTORY+"/"+base_contract_string+"_Implementation.json"
     standard_file = ETL_PROTOCOL_JSON_DIRECTORY+"/"+base_contract_string+".json"
     
-    if os.ETL_PROTOCOL_JSON_DIRECTORY.exists(proxy_file): 
+    if os.path.exists(proxy_file): 
         g = open(proxy_file)
         proxy_contract_data = json.load(g)
         addy = w3.toChecksumAddress(proxy_contract_data['address'])
@@ -213,7 +213,7 @@ def load_contract(base_contract_string):
         addy = w3.toChecksumAddress(standard_contract_data['address'])
         f.close() 
         
-    if os.ETL_PROTOCOL_JSON_DIRECTORY.exists(implementation_file):
+    if os.path.exists(implementation_file):
         f = open(implementation_file)
         impl_contract_data = json.load(f)
         abi = impl_contract_data['abi']
@@ -432,7 +432,6 @@ update_maxpositions()
 
 # COMMAND ----------
 
-
 events_list = [(BancorNetwork,"FlashLoanCompleted"),
                 (BancorNetwork,"FundsMigrated"),
                 (BancorNetwork,"NetworkFeesWithdrawn"),
@@ -504,7 +503,7 @@ def update_PoolCollection_events():
                          "TotalLiquidityUpdated", "TradingEnabled", "TradingFeePPMUpdated", "TradingLiquidityUpdated"]:    
     
         file_location = ETL_CSV_STORAGE_DIRECTORY+f'Events_PoolCollection_{str(name_of_event)}.csv'
-        if os.ETL_PROTOCOL_JSON_DIRECTORY.isfile(file_location):
+        if os.path.isfile(file_location):
             master = pd.read_csv(file_location, index_col=0, dtype=str)
             if len(master) != 0:
                 fromBlock = int(master.blocknumber.max())
@@ -578,7 +577,7 @@ def update_TEMPLATE_events(contract, name_of_event):
     name_of_contract = contract['name']
         
     file_location = ETL_CSV_STORAGE_DIRECTORY+f'Events_{str(name_of_contract)}_{str(name_of_event)}.csv'
-    if os.ETL_PROTOCOL_JSON_DIRECTORY.isfile(file_location):
+    if os.path.isfile(file_location):
         master = pd.read_csv(file_location, index_col=0, dtype=str)
         if len(master) != 0:
             fromBlock = int(master.blocknumber.max())
@@ -775,9 +774,10 @@ def repair_missing_times(eventsfiles):
     blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     blockNumber_to_timestamp.blocknumber = blockNumber_to_timestamp.blocknumber.astype(int)
-    filter_out = ['/dbfs/FileStore/tables/onchain_events/Events_poolData_Historical_latest.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_daily_bntTradingLiquidity.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_historical_deficit_by_tkn.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_historical_spotRates_emaRates.csv', '/dbfs/FileStore/tables/onchain_events/Events_v3_historical_tradingLiquidity.csv']
+    filter_out = [ETL_CSV_STORAGE_DIRECTORY+'Events_poolData_Historical_latest.csv', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_daily_bntTradingLiquidity.csv', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit_by_tkn.csv', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_spotRates_emaRates.csv', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_tradingLiquidity.csv']
     eventsfiles2 = [x for x in eventsfiles if x not in filter_out]
     for file in eventsfiles2:
+        print(file)
         Events_df = pd.read_csv(file, index_col=0, dtype=str)
         if 'blocknumber' in Events_df.columns:
     #             print(file)
@@ -890,7 +890,7 @@ def create_historical_pool_spotrates():
     blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     
-    bntprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_BNT.csv')
+    bntprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_BNT.csv', dtype=str)
     bntprices = bntprices[['time', 'close']].copy()
     bntprices.columns = ['timestamp','price']
     bntprices.timestamp = bntprices.timestamp.astype(int)
@@ -962,11 +962,12 @@ def create_updated_TokensTraded_table():
     blockNumber_to_timestamp = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv', index_col=0)
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     
-    bntprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_BNT.csv')
+    bntprices = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_BNT.csv', dtype=str)
     bntprices = bntprices[['time', 'close']].copy()
     bntprices.time = bntprices.time.astype(int)
     bntprices.set_index('time', inplace=True)
     bntprices.columns = ['price']
+    bntprices.loc[:,'price'] = [Decimal(x) for x in bntprices.price]
     
     Events_BancorNetwork_TokensTraded = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_BancorNetwork_TokensTraded.csv", index_col = 0, dtype = str)
     for col in ['sourceAmount_real',  'targetAmount_real', 'targetFeeAmount_real','bntAmount_real', 'bntFeeAmount_real']:
@@ -1033,8 +1034,6 @@ def create_updated_TokensTraded_table():
 
     Events_BancorNetwork_TokensTraded = Events_BancorNetwork_TokensTraded.astype(str)
     Events_BancorNetwork_TokensTraded.to_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_BancorNetwork_TokensTraded_Updated.csv")
-    
-    return()
 
 # COMMAND ----------
 
@@ -1492,7 +1491,7 @@ def get_v2_trade_data():
         '''
         select * 
         from "conversion_step" 
-        where "timestamp" >= '2022-04-01'
+        where "timestamp" >= '2022-01-01'
         ''',con=engine, dtype=str)
     tokensTraded_v2.blockId = tokensTraded_v2.blockId.astype(int)
     tokensTraded_v2.sort_values(by='blockId', inplace=True)
@@ -1543,124 +1542,109 @@ get_v2_trade_data()
 
 # COMMAND ----------
 
+def create_v2_v3_daily_summaries():
+    tokensTraded_v2_daily = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'versionTwo_TokensTraded.csv', index_col=0, dtype=str)
+    tokensTraded_v2_daily.loc[:,'day'] = [x[:10] for x in tokensTraded_v2_daily.time]
+    for col in ['sourceAmount_real','targetAmount_real','targetAmount_real_bnt','targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']:
+        tokensTraded_v2_daily.loc[:,col] = tokensTraded_v2_daily.loc[:,col].apply(lambda x: Decimal(str(x)))
 
-# def create_v2_v3_daily_summaries():
-tokensTraded_v2_daily = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'versionTwo_TokensTraded.csv', index_col=0, dtype=str)
-tokensTraded_v2_daily.loc[:,'day'] = [x[:10] for x in tokensTraded_v2_daily.time]
-for col in ['sourceAmount_real','targetAmount_real','targetAmount_real_bnt','targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']:
-    tokensTraded_v2_daily.loc[:,col] = tokensTraded_v2_daily.loc[:,col].apply(lambda x: Decimal(str(x)))
+    uniqueSymbols = sorted(list(set(list(tokensTraded_v2_daily.sourceSymbol) + list(tokensTraded_v2_daily.targetSymbol))))
+    uniqueSymbols.remove('bnt')
+    small_tokensTraded_v2_daily = tokensTraded_v2_daily[['day', 'txhash', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real',
+           'targetAmount_real', 'targetAmount_real_bnt', 'targetAmount_real_usd']].copy()
 
-uniqueSymbols = sorted(list(set(list(tokensTraded_v2_daily.sourceSymbol) + list(tokensTraded_v2_daily.targetSymbol))))
-uniqueSymbols.remove('bnt')
-small_tokensTraded_v2_daily = tokensTraded_v2_daily[['day', 'txhash', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real',
-       'targetAmount_real', 'targetAmount_real_bnt', 'targetAmount_real_usd']].copy()
+    tokensTraded_v2_daily_volume = pd.DataFrame()
+    for symbol in uniqueSymbols:
+        symbolindexes = list(small_tokensTraded_v2_daily[small_tokensTraded_v2_daily.sourceSymbol==symbol].index) + list(small_tokensTraded_v2_daily[small_tokensTraded_v2_daily.targetSymbol==symbol].index)
+        df = small_tokensTraded_v2_daily.iloc[symbolindexes].copy()
+        df2 = df[['day', 'sourceSymbol', 'targetSymbol','txhash']].copy()
 
-tokensTraded_v2_daily_volume = pd.DataFrame()
-for symbol in uniqueSymbols:
-    symbolindexes = list(small_tokensTraded_v2_daily[small_tokensTraded_v2_daily.sourceSymbol==symbol].index) + list(small_tokensTraded_v2_daily[small_tokensTraded_v2_daily.targetSymbol==symbol].index)
-    df = small_tokensTraded_v2_daily.iloc[symbolindexes].copy()
-    df2 = df[['day', 'sourceSymbol', 'targetSymbol','txhash']].copy()
-    
-    dftradecounts = df.groupby('day')['txhash'].count().reset_index()
-    dftradecounts.columns = ['day', 'v2_daily_trade_count']
-    df.drop(['sourceSymbol', 'targetSymbol','sourceAmount_real','txhash'], axis=1, inplace=True)
-    dfsums = df.groupby('day').sum(numeric_only=False)
-    dfsums.reset_index(inplace=True)
-    dfsums = pd.merge(dfsums, df2.groupby('day')['txhash'].nunique().reset_index(), how='left')
-    dfsums = pd.merge(dfsums, dftradecounts, how='left')
-    dfsums.rename(columns = {'txhash':'tx_count'}, inplace=True)
-    dfsums.loc[:,'v2_average_trade_size_usd'] = dfsums.targetAmount_real_usd / dfsums.v2_daily_trade_count
-    dfsums.loc[:,'symbol'] = symbol
-    tokensTraded_v2_daily_volume = tokensTraded_v2_daily_volume.append(dfsums)
-
-tokensTraded_v2_daily_volume.sort_values(by = ['day', 'symbol'], inplace=True)
-tokensTraded_v2_daily_volume.rename(columns = {'symbol':'poolSymbol', 'targetAmount_real': 'v2_totalVolume_real', 'targetAmount_real_bnt': 'v2_totalVolume_real_bnt', 'targetAmount_real_usd':'v2_totalVolume_real_usd', 'tx_count':'v2_daily_tx_count'}, inplace=True)
-tokensTraded_v2_daily_volume.reset_index(inplace=True, drop=True)
-
-tokensTraded_v2_daily_fees = tokensTraded_v2_daily[['day', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real','targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']].copy()
-tokensTraded_v2_daily_fees = tokensTraded_v2_daily.groupby(['day','targetSymbol']).sum(numeric_only=False)
-tokensTraded_v2_daily_fees.drop(['sourceSymbol','sourceAmount_real', 'targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd'], axis=1, inplace=True)
-tokensTraded_v2_daily_fees.sort_values(by = ['day', 'targetSymbol'], inplace=True)
-tokensTraded_v2_daily_fees.reset_index(inplace=True)
-tokensTraded_v2_daily_fees.rename(columns = {'targetSymbol':'poolSymbol','targetFeeAmount_real':'v2_targetFeeAmount_real', 'targetFeeAmount_real_bnt':'v2_targetFeeAmount_real_bnt','targetFeeAmount_real_usd':'v2_targetFeeAmount_real_usd', 'actualTotalFees_real_usd':'v2_actualTotalFees_real_usd'}, inplace=True)
-tokensTraded_v2_daily_fees = tokensTraded_v2_daily_fees[['day','poolSymbol', 'v2_targetFeeAmount_real', 'v2_targetFeeAmount_real_bnt', 'v2_targetFeeAmount_real_usd', 'v2_actualTotalFees_real_usd']].copy()
-
-v2_tokensTraded_combined = pd.merge(tokensTraded_v2_daily_volume,tokensTraded_v2_daily_fees, how='outer', on=['day','poolSymbol'])
-v2_tokensTraded_combined.fillna(Decimal('0'), inplace=True)
-v2_tokensTraded_combined.loc[:,'v2_daily_trade_count'] = [Decimal(x) for x in v2_tokensTraded_combined.v2_daily_trade_count]
-v2_tokensTraded_combined.loc[:,'v2_average_fee_size_usd'] = [get_safe_divide(v2_tokensTraded_combined.v2_actualTotalFees_real_usd[i], v2_tokensTraded_combined.v2_daily_trade_count[i]) for i in  v2_tokensTraded_combined.index]
-
-
-
-tokensTraded_v3_daily = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_BancorNetwork_TokensTraded_Updated.csv', index_col=0, dtype=str)
-tokensTraded_v3_daily.loc[:,'day'] = [x[:10] for x in tokensTraded_v3_daily.time]
-for col in ['sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd', 'targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']:
-    tokensTraded_v3_daily.loc[:,col] = tokensTraded_v3_daily.loc[:,col].apply(lambda x: Decimal(str(x)))
-
-uniqueSymbols = sorted(list(set(list(tokensTraded_v3_daily.sourceSymbol) + list(tokensTraded_v3_daily.targetSymbol))))
-uniqueSymbols.remove('bnt')
-small_tokensTraded_v3_daily = tokensTraded_v3_daily[['day', 'txhash', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd',
-       'targetAmount_real', 'targetAmount_real_bnt', 'targetAmount_real_usd']].copy()
-
-tokensTraded_v3_daily_volume = pd.DataFrame()
-for symbol in uniqueSymbols:
-    df = small_tokensTraded_v3_daily[small_tokensTraded_v3_daily.targetSymbol==symbol].copy()
-    dfcounts = df.groupby('day')['txhash'].nunique().reset_index()
-    dftradecounts = df.groupby('day')['txhash'].count().reset_index()
-    dftradecounts.columns = ['day', 'v3_daily_trade_count']
-    df.drop('txhash', axis=1, inplace=True)
-    dfsums = df.groupby('day').sum(numeric_only=False)
-
-    dfsums.reset_index(inplace=True)
-    dfsums.loc[:,'v3_totalVolume_real'] = dfsums.sourceAmount_real + dfsums.targetAmount_real
-    dfsums.loc[:,'v3_totalVolume_real_bnt'] = dfsums.sourceAmount_real_bnt + dfsums.targetAmount_real_bnt
-    dfsums.loc[:,'v3_totalVolume_real_usd'] = dfsums.sourceAmount_real_usd + dfsums.targetAmount_real_usd
-    dfsums = pd.merge(dfsums, dfcounts, how='left')
-    dfsums = pd.merge(dfsums, dftradecounts, how='left')
-    dfsums.rename(columns = {'txhash':'v3_daily_tx_count'}, inplace=True)
-    dfsums.loc[:,'v3_average_trade_size_usd'] = dfsums.targetAmount_real_usd / dfsums.v3_daily_trade_count
-    dfsums.drop(['sourceSymbol', 'targetSymbol', 'sourceAmount_real','sourceAmount_real_bnt','sourceAmount_real_usd','targetAmount_real','targetAmount_real_bnt','targetAmount_real_usd'], axis=1, inplace=True)
-    if len(dfsums)>0:
+        dftradecounts = df.groupby('day')['txhash'].count().reset_index()
+        dftradecounts.columns = ['day', 'v2_daily_trade_count']
+        df.drop(['sourceSymbol', 'targetSymbol','sourceAmount_real','txhash'], axis=1, inplace=True)
+        dfsums = df.groupby('day').sum(numeric_only=False)
+        dfsums.reset_index(inplace=True)
+        dfsums = pd.merge(dfsums, df2.groupby('day')['txhash'].nunique().reset_index(), how='left')
+        dfsums = pd.merge(dfsums, dftradecounts, how='left')
+        dfsums.rename(columns = {'txhash':'tx_count'}, inplace=True)
+        dfsums.loc[:,'v2_average_trade_size_usd'] = dfsums.targetAmount_real_usd / dfsums.v2_daily_trade_count
         dfsums.loc[:,'symbol'] = symbol
-        tokensTraded_v3_daily_volume = tokensTraded_v3_daily_volume.append(dfsums)
-    else:
-        pass
+        tokensTraded_v2_daily_volume = tokensTraded_v2_daily_volume.append(dfsums)
 
-tokensTraded_v3_daily_volume.rename(columns = {'symbol':'poolSymbol'}, inplace=True)
-    
-tokensTraded_v3_daily_fees = tokensTraded_v3_daily[['day', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd','targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']].copy()
-tokensTraded_v3_daily_fees = tokensTraded_v3_daily.groupby(['day','targetSymbol']).sum(numeric_only=False)
-tokensTraded_v3_daily_fees.drop(['sourceSymbol','sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd', 'targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd'], axis=1, inplace=True)
-tokensTraded_v3_daily_fees.sort_values(by = ['day', 'targetSymbol'], inplace=True)
-tokensTraded_v3_daily_fees.reset_index(inplace=True)
-tokensTraded_v3_daily_fees.rename(columns = {'targetSymbol':'poolSymbol','targetFeeAmount_real':'v3_targetFeeAmount_real', 'targetFeeAmount_real_bnt':'v3_targetFeeAmount_real_bnt','targetFeeAmount_real_usd':'v3_targetFeeAmount_real_usd', 'actualTotalFees_real_usd':'v3_actualTotalFees_real_usd'}, inplace=True)
-tokensTraded_v3_daily_fees = tokensTraded_v3_daily_fees[['day','poolSymbol', 'v3_targetFeeAmount_real', 'v3_targetFeeAmount_real_bnt', 'v3_targetFeeAmount_real_usd', 'v3_actualTotalFees_real_usd']].copy()
- 
-v3_tokensTraded_combined = pd.merge(tokensTraded_v3_daily_volume,tokensTraded_v3_daily_fees, how='outer', on=['day','poolSymbol'])
-v3_tokensTraded_combined.fillna(Decimal('0'), inplace=True)
-v3_tokensTraded_combined.loc[:,'v3_daily_trade_count'] = [Decimal(x) for x in v3_tokensTraded_combined.v3_daily_trade_count]
-v3_tokensTraded_combined.loc[:,'v3_average_fee_size_usd'] = [get_safe_divide(v3_tokensTraded_combined.v3_actualTotalFees_real_usd[i], v3_tokensTraded_combined.v3_daily_trade_count[i]) for i in  v3_tokensTraded_combined.index]
+    tokensTraded_v2_daily_volume.sort_values(by = ['day', 'symbol'], inplace=True)
+    tokensTraded_v2_daily_volume.rename(columns = {'symbol':'poolSymbol', 'targetAmount_real': 'v2_totalVolume_real', 'targetAmount_real_bnt': 'v2_totalVolume_real_bnt', 'targetAmount_real_usd':'v2_totalVolume_real_usd', 'tx_count':'v2_daily_tx_count'}, inplace=True)
+    tokensTraded_v2_daily_volume.reset_index(inplace=True, drop=True)
 
+    tokensTraded_v2_daily_fees = tokensTraded_v2_daily[['day', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real','targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']].copy()
+    tokensTraded_v2_daily_fees = tokensTraded_v2_daily.groupby(['day','targetSymbol']).sum(numeric_only=False)
+    tokensTraded_v2_daily_fees.drop(['sourceSymbol','sourceAmount_real', 'targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd'], axis=1, inplace=True)
+    tokensTraded_v2_daily_fees.sort_values(by = ['day', 'targetSymbol'], inplace=True)
+    tokensTraded_v2_daily_fees.reset_index(inplace=True)
+    tokensTraded_v2_daily_fees.rename(columns = {'targetSymbol':'poolSymbol','targetFeeAmount_real':'v2_targetFeeAmount_real', 'targetFeeAmount_real_bnt':'v2_targetFeeAmount_real_bnt','targetFeeAmount_real_usd':'v2_targetFeeAmount_real_usd', 'actualTotalFees_real_usd':'v2_actualTotalFees_real_usd'}, inplace=True)
+    tokensTraded_v2_daily_fees = tokensTraded_v2_daily_fees[['day','poolSymbol', 'v2_targetFeeAmount_real', 'v2_targetFeeAmount_real_bnt', 'v2_targetFeeAmount_real_usd', 'v2_actualTotalFees_real_usd']].copy()
 
-tokensTraded_combined = pd.merge(v2_tokensTraded_combined,v3_tokensTraded_combined, how='outer', on=['day','poolSymbol'])
-tokensTraded_combined.fillna(Decimal('0'), inplace=True)
-tokensTraded_combined.rename(columns = {'day': 'time'}, inplace=True)
-tokensTraded_combined = tokensTraded_combined.astype(str)
-# tokensTraded_combined.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_combined_TokensTraded_daily.csv')
-tokensTraded_combined    
-
-# COMMAND ----------
+    v2_tokensTraded_combined = pd.merge(tokensTraded_v2_daily_volume,tokensTraded_v2_daily_fees, how='outer', on=['day','poolSymbol'])
+    v2_tokensTraded_combined.fillna(Decimal('0'), inplace=True)
+    v2_tokensTraded_combined.loc[:,'v2_daily_trade_count'] = [Decimal(x) for x in v2_tokensTraded_combined.v2_daily_trade_count]
+    v2_tokensTraded_combined.loc[:,'v2_average_fee_size_usd'] = [get_safe_divide(v2_tokensTraded_combined.v2_actualTotalFees_real_usd[i], v2_tokensTraded_combined.v2_daily_trade_count[i]) for i in  v2_tokensTraded_combined.index]
 
 
 
-# COMMAND ----------
+    tokensTraded_v3_daily = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_BancorNetwork_TokensTraded_Updated.csv', index_col=0, dtype=str)
+    tokensTraded_v3_daily.loc[:,'day'] = [x[:10] for x in tokensTraded_v3_daily.time]
+    for col in ['sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd', 'targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']:
+        tokensTraded_v3_daily.loc[:,col] = tokensTraded_v3_daily.loc[:,col].apply(lambda x: Decimal(str(x)))
+
+    uniqueSymbols = sorted(list(set(list(tokensTraded_v3_daily.sourceSymbol) + list(tokensTraded_v3_daily.targetSymbol))))
+    uniqueSymbols.remove('bnt')
+    small_tokensTraded_v3_daily = tokensTraded_v3_daily[['day', 'txhash', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd',
+           'targetAmount_real', 'targetAmount_real_bnt', 'targetAmount_real_usd']].copy()
+
+    tokensTraded_v3_daily_volume = pd.DataFrame()
+    for symbol in uniqueSymbols:
+        df = small_tokensTraded_v3_daily[small_tokensTraded_v3_daily.targetSymbol==symbol].copy()
+        dfcounts = df.groupby('day')['txhash'].nunique().reset_index()
+        dftradecounts = df.groupby('day')['txhash'].count().reset_index()
+        dftradecounts.columns = ['day', 'v3_daily_trade_count']
+        df.drop('txhash', axis=1, inplace=True)
+        dfsums = df.groupby('day').sum(numeric_only=False)
+
+        dfsums.reset_index(inplace=True)
+        dfsums.loc[:,'v3_totalVolume_real'] = dfsums.sourceAmount_real + dfsums.targetAmount_real
+        dfsums.loc[:,'v3_totalVolume_real_bnt'] = dfsums.sourceAmount_real_bnt + dfsums.targetAmount_real_bnt
+        dfsums.loc[:,'v3_totalVolume_real_usd'] = dfsums.sourceAmount_real_usd + dfsums.targetAmount_real_usd
+        dfsums = pd.merge(dfsums, dfcounts, how='left')
+        dfsums = pd.merge(dfsums, dftradecounts, how='left')
+        dfsums.rename(columns = {'txhash':'v3_daily_tx_count'}, inplace=True)
+        dfsums.loc[:,'v3_average_trade_size_usd'] = dfsums.targetAmount_real_usd / dfsums.v3_daily_trade_count
+        dfsums.drop(['sourceSymbol', 'targetSymbol', 'sourceAmount_real','sourceAmount_real_bnt','sourceAmount_real_usd','targetAmount_real','targetAmount_real_bnt','targetAmount_real_usd'], axis=1, inplace=True)
+        if len(dfsums)>0:
+            dfsums.loc[:,'symbol'] = symbol
+            tokensTraded_v3_daily_volume = tokensTraded_v3_daily_volume.append(dfsums)
+        else:
+            pass
+
+    tokensTraded_v3_daily_volume.rename(columns = {'symbol':'poolSymbol'}, inplace=True)
+
+    tokensTraded_v3_daily_fees = tokensTraded_v3_daily[['day', 'sourceSymbol', 'targetSymbol', 'sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd','targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd','targetFeeAmount_real','targetFeeAmount_real_bnt','targetFeeAmount_real_usd','actualTotalFees_real_usd']].copy()
+    tokensTraded_v3_daily_fees = tokensTraded_v3_daily.groupby(['day','targetSymbol']).sum(numeric_only=False)
+    tokensTraded_v3_daily_fees.drop(['sourceSymbol','sourceAmount_real', 'sourceAmount_real_bnt', 'sourceAmount_real_usd', 'targetAmount_real','targetAmount_real_bnt', 'targetAmount_real_usd'], axis=1, inplace=True)
+    tokensTraded_v3_daily_fees.sort_values(by = ['day', 'targetSymbol'], inplace=True)
+    tokensTraded_v3_daily_fees.reset_index(inplace=True)
+    tokensTraded_v3_daily_fees.rename(columns = {'targetSymbol':'poolSymbol','targetFeeAmount_real':'v3_targetFeeAmount_real', 'targetFeeAmount_real_bnt':'v3_targetFeeAmount_real_bnt','targetFeeAmount_real_usd':'v3_targetFeeAmount_real_usd', 'actualTotalFees_real_usd':'v3_actualTotalFees_real_usd'}, inplace=True)
+    tokensTraded_v3_daily_fees = tokensTraded_v3_daily_fees[['day','poolSymbol', 'v3_targetFeeAmount_real', 'v3_targetFeeAmount_real_bnt', 'v3_targetFeeAmount_real_usd', 'v3_actualTotalFees_real_usd']].copy()
+
+    v3_tokensTraded_combined = pd.merge(tokensTraded_v3_daily_volume,tokensTraded_v3_daily_fees, how='outer', on=['day','poolSymbol'])
+    v3_tokensTraded_combined.fillna(Decimal('0'), inplace=True)
+    v3_tokensTraded_combined.loc[:,'v3_daily_trade_count'] = [Decimal(x) for x in v3_tokensTraded_combined.v3_daily_trade_count]
+    v3_tokensTraded_combined.loc[:,'v3_average_fee_size_usd'] = [get_safe_divide(v3_tokensTraded_combined.v3_actualTotalFees_real_usd[i], v3_tokensTraded_combined.v3_daily_trade_count[i]) for i in  v3_tokensTraded_combined.index]
 
 
-
-# COMMAND ----------
-
-
-
+    tokensTraded_combined = pd.merge(v2_tokensTraded_combined,v3_tokensTraded_combined, how='outer', on=['day','poolSymbol'])
+    tokensTraded_combined.fillna(Decimal('0'), inplace=True)
+    tokensTraded_combined.rename(columns = {'day': 'time'}, inplace=True)
+    tokensTraded_combined = tokensTraded_combined.astype(str)
+    tokensTraded_combined.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_combined_TokensTraded_daily.csv')    
 
 # COMMAND ----------
 
@@ -1692,8 +1676,8 @@ cols = []
 for file in eventsfiles:
     col = pd.read_csv(file, index_col=0, nrows=0).columns.tolist()
     cols += col
-    if 'blocknumber_x' in col:
-        print(file)
+#     if 'blocknumber_x' in col:
+#         print(file)
 setcols = sorted(list(set(cols)))
 print("Columns:", len(setcols))
 # print(setcols)
@@ -1702,37 +1686,3 @@ print("Columns:", len(setcols))
 
 data_dictionary = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'data_dictionary.csv')
 set(setcols) - set(sorted(list(set(data_dictionary.Column))))
-
-# COMMAND ----------
-
-# DBTITLE 1,Spark Tables for all "Events"
-perms = []
-for file in eventsfiles:
-    fileloc = file.replace('/dbfs','')
-    perm_name = fileloc.replace('.','_').split('/')[-1].lower()
-    perms += [perm_name]
-
-    # File location and type
-    file_location = fileloc
-    file_type = "csv"
-
-    # CSV options
-    infer_schema = "true"
-    first_row_is_header = "true"
-    delimiter = ","
-
-    # The applied options are for CSV files. For other file types, these will be ignored.
-    df = spark.read.format(file_type) \
-      .option("inferSchema", infer_schema) \
-      .option("header", first_row_is_header) \
-      .option("sep", delimiter) \
-      .load(file_location)
-
-    permanent_table_name = perm_name
-    df.write.format("parquet").mode("overwrite").saveAsTable(permanent_table_name)
-
-# COMMAND ----------
-
-sparktables = [i.name for i in spark.catalog.listTables() if 'events_' in i.name]
-print(len(sparktables))
-sparktables
