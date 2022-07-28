@@ -148,7 +148,6 @@ def update_tokenInfo():
     tokenInfo2.sort_values(by='symbol', inplace=True)
     tokenInfo2.reset_index(inplace=True, drop=True)
 
-    
     #check again for missing poolTokenAddreses as tokens are not allocated until they become pools
     emptys = tokenInfo2[tokenInfo2.poolTokenAddress=='0x0000000000000000000000000000000000000000'].copy()
     emptytokenAddresses = {emptys.symbol[i]: emptys.tokenAddress[i] for i in emptys.index}
@@ -158,10 +157,11 @@ def update_tokenInfo():
     tokenInfo3 = tokenInfo2.drop(emptys.index).append(emptys)
     tokenInfo3.sort_values(by='symbol', inplace=True)
     tokenInfo3.reset_index(inplace=True, drop=True)
+    tokenInfo3 = tokenInfo3.astype(str)
     tokenInfo3.to_csv(ETL_CSV_STORAGE_DIRECTORY+'tokenInfo.csv')
+    tokenInfo3.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'tokenInfo.parquet', compression='gzip')
 
     return(tokenInfo3)
-
 
 # COMMAND ----------
 
@@ -175,7 +175,9 @@ def update_blockNumber_to_timestamp():
     df = df[~df.timestamp.duplicated()].copy()
     df.sort_values(by='timestamp', inplace=True)
     df.reset_index(inplace=True, drop=True)
+    df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.csv')
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'blockNumber_to_timestamp.parquet', compression='gzip', allow_truncated_timestamps=True)
 
 # COMMAND ----------
 
@@ -193,7 +195,9 @@ def update_maxpositions():
     maxpositionsdf = maxpositionsdf[~maxpositionsdf.day.isin(daylist)].append(btts)
     maxpositionsdf.rename(columns = {'block_number':'blocknumber'}, inplace=True)
     maxpositionsdf.reset_index(inplace=True, drop=True)
+    maxpositionsdf = maxpositionsdf.astype(str)
     maxpositionsdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'maxpositionsdf.csv')
+    maxpositionsdf.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'maxpositionsdf.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -503,6 +507,7 @@ def update_PoolCollection_events():
                          "TotalLiquidityUpdated", "TradingEnabled", "TradingFeePPMUpdated", "TradingLiquidityUpdated"]:    
     
         file_location = ETL_CSV_STORAGE_DIRECTORY+f'Events_PoolCollection_{str(name_of_event)}.csv'
+        file_location_par = ETL_CSV_STORAGE_DIRECTORY+f'Events_PoolCollection_{str(name_of_event)}.parquet'
         if os.path.isfile(file_location):
             master = pd.read_csv(file_location, index_col=0, dtype=str)
             if len(master) != 0:
@@ -566,6 +571,7 @@ def update_PoolCollection_events():
         master.reset_index(inplace=True, drop=True)
         master = master.astype(str)
         master.to_csv(file_location)
+        master.to_parquet(file_location_par, compression='gzip')
 
     return()
 
@@ -577,6 +583,7 @@ def update_TEMPLATE_events(contract, name_of_event):
     name_of_contract = contract['name']
         
     file_location = ETL_CSV_STORAGE_DIRECTORY+f'Events_{str(name_of_contract)}_{str(name_of_event)}.csv'
+    file_location_par = ETL_CSV_STORAGE_DIRECTORY+f'Events_{str(name_of_contract)}_{str(name_of_event)}.parquet'
     if os.path.isfile(file_location):
         master = pd.read_csv(file_location, index_col=0, dtype=str)
         if len(master) != 0:
@@ -633,6 +640,7 @@ def update_TEMPLATE_events(contract, name_of_event):
     master.reset_index(inplace=True, drop=True)
     master = master.astype(str)
     master.to_csv(file_location)
+    master.to_parquet(file_location_par, compression='gzip')
 
     return(master)
 
@@ -663,7 +671,7 @@ for stringdf in ["Events_PoolCollection_TokensWithdrawn"]:
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
-    
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
 
 # Specific for BN TokensTraded
 for stringdf in ["Events_BancorNetwork_TokensTraded"]:
@@ -677,7 +685,7 @@ for stringdf in ["Events_BancorNetwork_TokensTraded"]:
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
-
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
 
 # Specific for rewards to rewardsDecimals
 for stringdf in ["Events_StandardRewards_ProgramCreated"]:
@@ -693,7 +701,7 @@ for stringdf in ["Events_StandardRewards_ProgramCreated"]:
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
-    
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
     
 # Specific for rewards to 18
 for stringdf in ["Events_StandardRewards_ProgramEnabled", "Events_StandardRewards_ProgramTerminated"]:
@@ -709,7 +717,7 @@ for stringdf in ["Events_StandardRewards_ProgramEnabled", "Events_StandardReward
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
-    
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
     
     
 # When many amount map to tokenDecimals
@@ -726,7 +734,7 @@ for stringdf in ["Events_BancorNetwork_FundsMigrated", "Events_ExternalProtectio
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
-
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
     
 # When many amount map to poolDecimals
 for stringdf in ["Events_PoolCollection_TotalLiquidityUpdated", "Events_StandardRewards_ProviderJoined", "Events_StandardRewards_ProviderLeft", "Events_PendingWithdrawals_WithdrawalInitiated", "Events_PendingWithdrawals_WithdrawalCompleted", "Events_PendingWithdrawals_WithdrawalCancelled"]:
@@ -742,7 +750,7 @@ for stringdf in ["Events_PoolCollection_TotalLiquidityUpdated", "Events_Standard
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
-
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
     
 # When all decimals are 18
 for stringdf in ["Events_BNTPool_FundingRenounced", "Events_BNTPool_FundingRequested", "Events_BNTPool_TokensDeposited", "Events_BNTPool_TokensWithdrawn", "Events_BNTPool_TotalLiquidityUpdated",
@@ -760,11 +768,12 @@ for stringdf in ["Events_BNTPool_FundingRenounced", "Events_BNTPool_FundingReque
     df.reset_index(inplace=True, drop=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
-
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
 
 # COMMAND ----------
 
 eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
+eventsfiles = [x for x in eventsfiles if 'parquet' not in x]
 print(len(eventsfiles))
 eventsfiles
 
@@ -856,6 +865,7 @@ def get_updatePriceData(tokenSymbol):
     mdf.reset_index(inplace=True, drop=True)
     mdf = mdf.astype(str)
     mdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_{tokenSymbol}.csv')
+    mdf.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_{tokenSymbol}.parquet', compression='gzip')
     print(len(mdf))
 
 # COMMAND ----------
@@ -879,6 +889,7 @@ def update_daily_bntprices():
     prices.set_index('day', inplace=True)
     prices = prices.astype(str)
     prices.to_csv(ETL_CSV_STORAGE_DIRECTORY+'cg_daily_bntprices.csv')
+    prices.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'cg_daily_bntprices.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -951,6 +962,7 @@ def create_historical_pool_spotrates():
 
     newmtl = newmtl.astype(str)
     newmtl.to_csv(ETL_CSV_STORAGE_DIRECTORY+"PoolCollection_TradingLiquidityUpdated_SpotRates.csv")
+    newmtl.to_parquet(ETL_CSV_STORAGE_DIRECTORY+"PoolCollection_TradingLiquidityUpdated_SpotRates.parquet", compression='gzip')
 
 # COMMAND ----------
 
@@ -1034,6 +1046,7 @@ def create_updated_TokensTraded_table():
 
     Events_BancorNetwork_TokensTraded = Events_BancorNetwork_TokensTraded.astype(str)
     Events_BancorNetwork_TokensTraded.to_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_BancorNetwork_TokensTraded_Updated.csv")
+    Events_BancorNetwork_TokensTraded.to_parquet(ETL_CSV_STORAGE_DIRECTORY+"Events_BancorNetwork_TokensTraded_Updated.parquet", compression='gzip')
 
 # COMMAND ----------
 
@@ -1237,6 +1250,7 @@ def update_daily_poolData_historical():  #oold version in the Events Curator
         sdf.replace('NaN', '0', inplace=True)
         sdf = sdf.astype(str)
         sdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_{day}.csv')
+        sdf.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_{day}.parquet', compression='gzip')
 
 
     # overwrite the latest data
@@ -1244,7 +1258,9 @@ def update_daily_poolData_historical():  #oold version in the Events Curator
     all_files = [x for x in all_files if 'latest' not in x]
     df = pd.read_csv(all_files[-1], index_col=0, dtype=str)
     df.rename(columns = {'symbol':'poolSymbol', 'day': 'time'}, inplace=True)
+    df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f'Events_poolData_Historical_latest.csv')
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f'Events_poolData_Historical_latest.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1260,7 +1276,9 @@ def get_v3_historical_deficit():
         df = pd.read_csv(file, index_col=0)
         infor += [(df.iloc[0]['time'] ,df.surplus_bnt.sum(), df.surplus_usd.sum())]
     infordf = pd.DataFrame(infor, columns = ['time', 'v3_surplus_bnt', 'v3_surplus_usd'])
+    infordf = infordf.astype(str)
     infordf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit.csv')
+    infordf.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1278,6 +1296,7 @@ def get_v3_historical_deficit_by_tkn():
         mdf = mdf.append(df2)
     mdf = mdf.astype(str)
     mdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit_by_tkn.csv')
+    mdf.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit_by_tkn.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1298,7 +1317,9 @@ def get_v3_daily_TL():
         df2 = df[['time', 'blocknumber', 'bntTradingLiquidity_real_bnt', 'bntTradingLiquidity_real_usd']].copy()
         mdf = mdf.append(df2)
 
+    historical_tradingLiquidity = historical_tradingLiquidity.astype(str)
     historical_tradingLiquidity.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_tradingLiquidity.csv')
+    historical_tradingLiquidity.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_tradingLiquidity.parquet', compression='gzip')
 
     mdf.loc[:,'bntTradingLiquidity_real_bnt'] = [Decimal(x) for x in mdf.bntTradingLiquidity_real_bnt]
     mdf.loc[:,'bntTradingLiquidity_real_usd'] = [Decimal(x) for x in mdf.bntTradingLiquidity_real_usd]
@@ -1309,7 +1330,9 @@ def get_v3_daily_TL():
     historical_tradingLiquidity_sums.reset_index(inplace=True, drop=True)
     historical_tradingLiquidity_sums.loc[:,'bntprice'] = [round(get_safe_divide(historical_tradingLiquidity_sums.bntTradingLiquidity_real_usd[i], historical_tradingLiquidity_sums.bntTradingLiquidity_real_bnt[i]),6) for i in historical_tradingLiquidity_sums.index]
 
+    historical_tradingLiquidity_sums = historical_tradingLiquidity_sums.astype(str)
     historical_tradingLiquidity_sums.to_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_v3_daily_bntTradingLiquidity.csv")
+    historical_tradingLiquidity_sums.to_parquet(ETL_CSV_STORAGE_DIRECTORY+"Events_v3_daily_bntTradingLiquidity.parquet", compression='gzip')
 
 # COMMAND ----------
 
@@ -1340,6 +1363,7 @@ def get_v3_daily_spotRates_emaRates():
     mdf.reset_index(inplace=True, drop=True)
     mdf = mdf.astype(str)
     mdf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_spotRates_emaRates.csv')
+    mdf.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_spotRates_emaRates.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1354,7 +1378,9 @@ WithdrawalCompleted = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_PendingWithd
 
 WithdrawalCurrentPending = WithdrawalInitiated[WithdrawalInitiated.requestId.isin(set(WithdrawalInitiated.requestId) - set(WithdrawalCompleted.requestId) - set(WithdrawalCancelled.requestId))].copy()
 WithdrawalCurrentPending.reset_index(inplace=True, drop=True)
+WithdrawalCurrentPending = WithdrawalCurrentPending.astype(str)
 WithdrawalCurrentPending.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_PendingWithdrawals_WithdrawalCurrentPending.csv')
+WithdrawalCurrentPending.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_PendingWithdrawals_WithdrawalCurrentPending.parquet', compression='gzip')
 
 emarates = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_poolData_Historical_latest.csv', index_col = 0, dtype=str)
 emarates = emarates[['poolSymbol','emaRate','bntprice']].copy()
@@ -1372,6 +1398,7 @@ for stringdf in ["Events_PendingWithdrawals_WithdrawalInitiated", "Events_Pendin
     df.loc[:,'reserveTokenAmount_real_usd'] = df.reserveTokenAmount_real_bnt * df.bntprice
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.csv")
+    df.to_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet", compression='gzip')
 
 # COMMAND ----------
 
@@ -1440,6 +1467,7 @@ def update_basic_poolData():
     existing = existing[~existing.duplicated()].copy()
     existing = existing.astype(str)
     existing.to_csv(ETL_CSV_STORAGE_DIRECTORY+'PoolCollection_TokensDeposited_poolData.csv')
+    existing.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'PoolCollection_TokensDeposited_poolData.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1476,6 +1504,7 @@ def get_v3_deposits_table():
     deposits.reset_index(inplace=True, drop=True)
     deposits = deposits.astype(str)
     deposits.to_csv(ETL_CSV_STORAGE_DIRECTORY+"Events_All_TokensDeposited.csv")
+    deposits.to_parquet(ETL_CSV_STORAGE_DIRECTORY+"Events_All_TokensDeposited.parquet", compression='gzip')
 
 # COMMAND ----------
 
@@ -1535,6 +1564,7 @@ def get_v2_trade_data():
     tokensTraded_v2.reset_index(inplace=True, drop=True)
     tokensTraded_v2 = tokensTraded_v2.astype(str)
     tokensTraded_v2.to_csv(ETL_CSV_STORAGE_DIRECTORY+'versionTwo_TokensTraded.csv')
+    tokensTraded_v2.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'versionTwo_TokensTraded.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1644,7 +1674,8 @@ def create_v2_v3_daily_summaries():
     tokensTraded_combined.fillna(Decimal('0'), inplace=True)
     tokensTraded_combined.rename(columns = {'day': 'time'}, inplace=True)
     tokensTraded_combined = tokensTraded_combined.astype(str)
-    tokensTraded_combined.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_combined_TokensTraded_daily.csv')    
+    tokensTraded_combined.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_combined_TokensTraded_daily.csv')   
+    tokensTraded_combined.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_combined_TokensTraded_daily.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1663,6 +1694,7 @@ def get_slippage_stats():
     mindf.loc[:,'slippage_perc'] =  mindf.sourceAmount_real / (mindf.prevLiquidity_real + mindf.sourceAmount_real)
     mindf = mindf.astype(str)
     mindf.to_csv(ETL_CSV_STORAGE_DIRECTORY+'Events_Trade_Slippage_Stats.csv')
+    mindf.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_Trade_Slippage_Stats.parquet', compression='gzip')
 
 # COMMAND ----------
 
@@ -1671,6 +1703,7 @@ get_slippage_stats()
 # COMMAND ----------
 
 eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
+eventsfiles = [x for x in eventsfiles if 'parquet' not in x]
 print("Events Files:",len(eventsfiles))
 cols = []
 for file in eventsfiles:
