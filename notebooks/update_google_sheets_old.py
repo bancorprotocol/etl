@@ -155,6 +155,7 @@ UNUSED_EVENTS = [
     'events_standardrewards_rewardsclaimed_csv',
     'events_standardrewards_rewardsstaked_csv',
     'events_poolcollection_tradingliquidityupdated_spotrates_csv',
+    'events_bancornetwork_tokenstraded_updated_csv',
 ]
 
 
@@ -182,14 +183,14 @@ list_of_spark_tables = []
 
 # Loops through each table.
 for table_name in LIST_OF_SPARK_TABLES:
-
+    
     #ensure that table exists
     if (spark.sql("show tables in default"
                  ).filter(col("tableName") == f"{table_name}").count() > 0):
         list_of_spark_tables.append(table_name)
     else:
         print(f'table not found {table_name}')
-
+        
 
 # COMMAND ----------
 
@@ -200,7 +201,7 @@ for table_name in LIST_OF_SPARK_TABLES:
 
 unique_col_mapping, combined_df = get_event_mapping(
     spark,
-    all_columns=ALL_COLUMNS,
+    all_columns=ALL_COLUMNS, 
     default_value_map=DEFAULT_VALUE_MAP,
     list_of_spark_tables=list_of_spark_tables
 )
@@ -211,7 +212,7 @@ unique_col_mapping, combined_df = get_event_mapping(
 
 # Loops through each table.
 for table_name in list_of_spark_tables:
-
+        
     # Cleans the google sheets name for clarity.
     clean_table_name = clean_google_sheets_name(table_name)
 
@@ -226,9 +227,9 @@ for table_name in list_of_spark_tables:
 
     # Combine the dataframes
     combined_df = concat_dataframes(pdf, combined_df)
-
-
-
+        
+        
+    
 
 # COMMAND ----------
 
@@ -238,9 +239,9 @@ for table_name in list_of_spark_tables:
 # COMMAND ----------
 
 # fills in any remaining missing values for encoder
-combined_df = handle_types_and_missing_values(combined_df,
-                                              DEFAULT_VALUE_MAP,
-                                              ALL_COLUMNS,
+combined_df = handle_types_and_missing_values(combined_df, 
+                                              DEFAULT_VALUE_MAP, 
+                                              ALL_COLUMNS, 
                                               TYPE_MAP,
                                               data_dictionary
                                              )
