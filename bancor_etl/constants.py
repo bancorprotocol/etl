@@ -10,9 +10,14 @@ import numpy as np
 import os
 
 # Define parameters
-ETL_USER_EMAIL = os.environ.get("ETL_USER_EMAIL")
-ETL_ROBOT_EMAIL = os.environ.get("ETL_ROBOT_EMAIL")
+ETL_USER_EMAIL = os.environ.get("ETL_USER_NAME")
+ETL_ROBOT_EMAIL = os.environ.get("ETL_ROBOT_NAME")
 ETL_GOOGLE_SHEETS_CREDENTIALS = os.environ.get("ETL_GOOGLE_SHEETS_CREDENTIALS")
+ETL_ALCHEMY_APIKEY = os.environ.get("ETL_ALCHEMY_APIKEY")
+ETL_CRYPTOCOMPARE_APIKEY = os.environ.get("ETL_CRYPTOCOMPARE_APIKEY")
+ETL_BANCOR_V2_DB = os.environ.get("ETL_BANCOR_V2_DB")
+ETL_CSV_STORAGE_DIRECTORY = os.environ.get("ETL_CSV_STORAGE_DIRECTORY")
+ETL_PROTOCOL_JSON_DIRECTORY = os.environ.get("ETL_PROTOCOL_JSON_DIRECTORY")
 
 # base google sheet name to increment tableau wildcard * union on
 EVENTS_TABLE = 'all_events'
