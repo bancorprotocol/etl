@@ -192,8 +192,10 @@ def add_missing_columns(pdf: pd.DataFrame,
     # Create new columns with default missing values per the correct data type
     missing_cols = [col for col in all_columns if col not in pdf.columns]
     for col in missing_cols:
-        default_value = unique_col_mapping[col]
-        pdf[col] = [default_value for _ in range(len(pdf))]
+        if col in all_columns:
+            if col in unique_col_mapping:
+                default_value = unique_col_mapping[col]
+                pdf[col] = [default_value for _ in range(len(pdf))]
     pdf = pdf[all_columns]
     return pdf
 
