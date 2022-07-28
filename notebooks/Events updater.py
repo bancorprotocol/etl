@@ -147,6 +147,7 @@ def update_tokenInfo():
     tokenInfo2 = tokenInfo.append(missingdf)
     tokenInfo2.sort_values(by='symbol', inplace=True)
     tokenInfo2.reset_index(inplace=True, drop=True)
+
     
     #check again for missing poolTokenAddreses as tokens are not allocated until they become pools
     emptys = tokenInfo2[tokenInfo2.poolTokenAddress=='0x0000000000000000000000000000000000000000'].copy()
@@ -160,6 +161,7 @@ def update_tokenInfo():
     tokenInfo3.to_csv(ETL_CSV_STORAGE_DIRECTORY+'tokenInfo.csv')
 
     return(tokenInfo3)
+
 
 # COMMAND ----------
 
@@ -429,6 +431,7 @@ update_blockNumber_to_timestamp()
 update_maxpositions()
 
 # COMMAND ----------
+
 
 events_list = [(BancorNetwork,"FlashLoanCompleted"),
                 (BancorNetwork,"FundsMigrated"),
@@ -1039,10 +1042,6 @@ create_updated_TokensTraded_table()
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # DBTITLE 1,V3 Historical PoolData Stats
 def update_daily_poolData_historical():  #oold version in the Events Curator
     maxpositionsdf = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'maxpositionsdf.csv', index_col=0)  
@@ -1544,6 +1543,7 @@ get_v2_trade_data()
 
 # COMMAND ----------
 
+
 # def create_v2_v3_daily_summaries():
 tokensTraded_v2_daily = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'versionTwo_TokensTraded.csv', index_col=0, dtype=str)
 tokensTraded_v2_daily.loc[:,'day'] = [x[:10] for x in tokensTraded_v2_daily.time]
@@ -1658,6 +1658,7 @@ tokensTraded_combined
 
 
 # COMMAND ----------
+
 
 
 

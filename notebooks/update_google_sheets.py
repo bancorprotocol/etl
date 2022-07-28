@@ -12,7 +12,7 @@ Adding new tables:
 * Add the table name to the list of tables in CMD 5 in this notebook.
 
 Adding new columns:
-* Update the data dictionary with new column and type in google sheets:
+* Update the data dictionary with new column and type in google sheets: 
 
 Updates require 30+ minutes to complete once started.
 """
@@ -155,7 +155,6 @@ UNUSED_EVENTS = [
     'events_standardrewards_rewardsclaimed_csv',
     'events_standardrewards_rewardsstaked_csv',
     'events_poolcollection_tradingliquidityupdated_spotrates_csv',
-    'events_bancornetwork_tokenstraded_updated_csv',
 ]
 
 
