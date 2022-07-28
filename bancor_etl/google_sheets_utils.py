@@ -197,6 +197,7 @@ def add_missing_columns(pdf: pd.DataFrame,
             pdf[col] = [default_value for _ in range(len(pdf))]
         if (col not in all_columns) and (col in pdf.columns):
             all_columns.append(col)
+    all_columns = [col for col in all_columns if col in pdf.columns]
     pdf = pdf[all_columns]
     return pdf
 
