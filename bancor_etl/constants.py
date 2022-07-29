@@ -10,8 +10,8 @@ import numpy as np
 import os
 
 # Define parameters
-ETL_USER_EMAIL = os.environ.get("ETL_USER_NAME")
-ETL_ROBOT_EMAIL = os.environ.get("ETL_ROBOT_NAME")
+ETL_USER_EMAIL = os.environ.get("ETL_USER_EMAIL")
+ETL_ROBOT_EMAIL = os.environ.get("ETL_ROBOT_EMAIL")
 ETL_GOOGLE_SHEETS_CREDENTIALS = os.environ.get("ETL_GOOGLE_SHEETS_CREDENTIALS")
 ETL_ALCHEMY_APIKEY = os.environ.get("ETL_ALCHEMY_APIKEY")
 ETL_CRYPTOCOMPARE_APIKEY = os.environ.get("ETL_CRYPTOCOMPARE_APIKEY")
