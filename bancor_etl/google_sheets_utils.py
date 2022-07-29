@@ -89,7 +89,7 @@ def handle_google_sheets(clean_table_name: str,
     print(clean_table_name_chunk)
 
     # resize the sheet dynamically
-    num_rows = len(pdf_chunk) + 1
+    num_rows = len(pdf_chunk)
     num_cols = len(list(pdf_chunk.columns))
 
     # Try to open the Google sheet based on its title and if it fails, create it
@@ -174,8 +174,7 @@ def get_event_mapping(spark,
 
     unique_col_mapping_cp = {}
     for col in all_columns:
-        if col in unique_col_mapping:
-            unique_col_mapping_cp[col] = unique_col_mapping[col]
+        unique_col_mapping_cp[col] = unique_col_mapping[col]
 
     for col in unique_col_mapping_cp:
         combined_df[col] = []
@@ -192,14 +191,11 @@ def add_missing_columns(pdf: pd.DataFrame,
     # Create new columns with default missing values per the correct data type
     missing_cols = [col for col in all_columns if col not in pdf.columns]
     for col in missing_cols:
-        if (col in unique_col_mapping) & (col in all_columns):
-            default_value = unique_col_mapping[col]
-            pdf[col] = [default_value for _ in range(len(pdf))]
-        if (col not in all_columns) and (col in pdf.columns):
-            all_columns.append(col)
-    all_columns = [col for col in all_columns if col in pdf.columns]
+        default_value = unique_col_mapping[col]
+        pdf[col] = [default_value for _ in range(len(pdf))]
+
     pdf = pdf[all_columns]
-    return pdf, all_columns
+    return pdf
 
 
 def concat_dataframes(pdf: pd.DataFrame, combined_df: pd.DataFrame):
