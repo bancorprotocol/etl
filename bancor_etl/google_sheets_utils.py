@@ -89,7 +89,7 @@ def handle_google_sheets(clean_table_name: str,
     print(clean_table_name_chunk)
 
     # resize the sheet dynamically
-    num_rows = len(pdf_chunk)
+    num_rows = len(pdf_chunk) + 1
     num_cols = len(list(pdf_chunk.columns))
 
     # Try to open the Google sheet based on its title and if it fails, create it
