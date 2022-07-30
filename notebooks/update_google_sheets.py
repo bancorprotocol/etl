@@ -37,6 +37,14 @@ from bancor_etl.google_sheets_utils import *
 
 # COMMAND ----------
 
+ETL_ROBOT_EMAIL
+
+# COMMAND ----------
+
+ETL_USER_EMAIL
+
+# COMMAND ----------
+
 ADDRESS_COLUMNS = [
     # 'contextId', 'pool', 'txhash', 'provider'
 ]
