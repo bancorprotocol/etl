@@ -57,7 +57,7 @@ def handle_google_sheets_auth():
     return gc
 
 
-def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
+def delete_unused_google_sheets(num_chunks: int):
     """
     Connect to google sheets via API, then delete any old google sheets not currently used.
     """
@@ -69,7 +69,7 @@ def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
     keep_titles.append('data_dictionary')
 
     spreadsheets = gc.spreadsheet_titles()
-    delete_titles = [item for item in spreadsheets if item not in keep_titles]
+    delete_titles = [item for item in spreadsheets if item not in keep_titles and 'all_events_' in item]
 
     for sheet_title in delete_titles:
         try:
