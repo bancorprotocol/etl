@@ -11,7 +11,7 @@ from typing import Tuple
 import pandas as pd
 import pygsheets
 from sklearn.preprocessing import OrdinalEncoder
-
+from apiclient import errors
 from .constants import *
 
 
@@ -72,8 +72,11 @@ def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
     delete_titles = [item for item in spreadsheets if item not in keep_titles]
 
     for sheet_title in delete_titles:
-        wb = gc.open(sheet_title)
-        gc.drive.delete(wb.id)
+        try:
+            wb = gc.open(sheet_title)
+            gc.drive.delete(wb.id)
+        except errors.HttpError as error:
+            print(f'An error occurred on sheet {sheet_title}: {error}')
 
 
 def handle_google_sheets(clean_table_name: str,
