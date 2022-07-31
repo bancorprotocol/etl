@@ -73,6 +73,7 @@ def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
 
     for sheet_title in delete_titles:
         try:
+            print(f'Attempting to delete sheet {sheet_title}')
             wb = gc.open(sheet_title)
             gc.drive.delete(wb.id)
         except errors.HttpError as error:
