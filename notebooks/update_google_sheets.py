@@ -37,6 +37,14 @@ from bancor_etl.google_sheets_utils import *
 
 # COMMAND ----------
 
+ETL_ROBOT_EMAIL
+
+# COMMAND ----------
+
+ETL_USER_EMAIL
+
+# COMMAND ----------
+
 ADDRESS_COLUMNS = [
     # 'contextId', 'pool', 'txhash', 'provider'
 ]
@@ -92,6 +100,7 @@ LIST_OF_SPARK_TABLES = [
  'events_bntpool_tokensdeposited_csv',
  'events_bntpool_tokenswithdrawn_csv',
  'events_bntpool_totalliquidityupdated_csv',
+ 'events_combined_tokenstraded_daily_csv',
  'events_combined_tokenstraded_daily_fees_csv',
  'events_combined_tokenstraded_daily_volume_csv',
  'events_externalprotectionvault_fundsburned_csv',

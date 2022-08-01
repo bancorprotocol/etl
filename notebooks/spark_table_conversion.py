@@ -5,6 +5,8 @@ from bancor_etl.constants import *
 # COMMAND ----------
 
 eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
+eventsfiles = [x for x in eventsfiles if 'parquet' in x]
+eventsfiles
 
 # COMMAND ----------
 
