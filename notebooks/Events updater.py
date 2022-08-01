@@ -1054,6 +1054,18 @@ create_updated_TokensTraded_table()
 
 # COMMAND ----------
 
+# may have to run this once on set up
+all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_20*')
+all_files_csv = [x.replace('.csv','') for x in all_files if 'csv' in x]
+all_files_par = [x.replace('.parquet','') for x in all_files if 'parquet' in x]
+missing_pars = [x+'.csv' for x in all_files_csv if x not in all_files_par]
+for file in missing_pars:
+    df = pd.read_csv(file, index_col=0, dtype=str)
+    file_par = file.replace(".csv", ".parquet")
+    df.to_parquet(file_par, compression='gzip')
+
+# COMMAND ----------
+
 # DBTITLE 1,V3 Historical PoolData Stats
 def update_daily_poolData_historical():  #oold version in the Events Curator
     maxpositionsdf = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'maxpositionsdf.csv', index_col=0)  
@@ -1255,8 +1267,9 @@ def update_daily_poolData_historical():  #oold version in the Events Curator
 
     # overwrite the latest data
     all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_20*')
+    all_files = [x for x in all_files if 'parquet' in x]
     all_files = [x for x in all_files if 'latest' not in x]
-    df = pd.read_csv(all_files[-1], index_col=0, dtype=str)
+    df = pd.read_parquet(all_files[-1])
     df.rename(columns = {'symbol':'poolSymbol', 'day': 'time'}, inplace=True)
     df = df.astype(str)
     df.to_csv(ETL_CSV_STORAGE_DIRECTORY+f'Events_poolData_Historical_latest.csv')
@@ -1270,6 +1283,7 @@ update_daily_poolData_historical()
 
 def get_v3_historical_deficit():
     all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
+    all_files = [x for x in all_files if 'parquet' not in x]
     all_files = [x for x in all_files if 'latest' not in x]
     infor = []
     for file in all_files:
@@ -1288,6 +1302,7 @@ get_v3_historical_deficit()
 
 def get_v3_historical_deficit_by_tkn():
     all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
+    all_files = [x for x in all_files if 'parquet' not in x]
     all_files = [x for x in all_files if 'latest' not in x]
     mdf = pd.DataFrame()
     for file in all_files:
@@ -1306,6 +1321,7 @@ get_v3_historical_deficit_by_tkn()
 
 def get_v3_daily_TL():
     all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
+    all_files = [x for x in all_files if 'parquet' not in x]
     all_files = [x for x in all_files if 'latest' not in x]
     historical_tradingLiquidity = pd.DataFrame()
     mdf = pd.DataFrame()
@@ -1345,6 +1361,7 @@ def get_v3_daily_spotRates_emaRates():
     cgprices.bntprice = [Decimal(x) for x in cgprices.bntprice]
 
     all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'*poolData_Historical_20*')
+    all_files = [x for x in all_files if 'parquet' not in x]
     all_files = [x for x in all_files if 'latest' not in x]
     mdf = pd.DataFrame()
     for file in all_files:
@@ -1717,5 +1734,9 @@ print("Columns:", len(setcols))
 
 # COMMAND ----------
 
-data_dictionary = pd.read_csv(ETL_CSV_STORAGE_DIRECTORY+'data_dictionary.csv')
+data_dictionary = pd.read_csv('/dbfs/FileStore/tables/onchain_events/data_dictionary.csv')
 set(setcols) - set(sorted(list(set(data_dictionary.Column))))
+
+# COMMAND ----------
+
+
