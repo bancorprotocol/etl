@@ -11,7 +11,7 @@ from typing import Tuple
 import pandas as pd
 import pygsheets
 from sklearn.preprocessing import OrdinalEncoder
-
+from apiclient import errors
 from .constants import *
 
 
@@ -57,7 +57,7 @@ def handle_google_sheets_auth():
     return gc
 
 
-def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
+def delete_unused_google_sheets(num_chunks: int):
     """
     Connect to google sheets via API, then delete any old google sheets not currently used.
     """
@@ -69,11 +69,15 @@ def delete_unused_google_sheets(num_chunks: int, max_search: int = 100):
     keep_titles.append('data_dictionary')
 
     spreadsheets = gc.spreadsheet_titles()
-    delete_titles = [item for item in spreadsheets if item not in keep_titles]
+    delete_titles = [item for item in spreadsheets if item not in keep_titles and 'all_events_' in item]
 
     for sheet_title in delete_titles:
-        wb = gc.open(sheet_title)
-        gc.drive.delete(wb.id)
+        try:
+            print(f'Attempting to delete sheet {sheet_title}')
+            wb = gc.open(sheet_title)
+            gc.drive.delete(wb.id)
+        except errors.HttpError as error:
+            print(f'An error occurred on sheet {sheet_title}: {error}')
 
 
 def handle_google_sheets(clean_table_name: str,
@@ -193,6 +197,7 @@ def add_missing_columns(pdf: pd.DataFrame,
     for col in missing_cols:
         default_value = unique_col_mapping[col]
         pdf[col] = [default_value for _ in range(len(pdf))]
+
     pdf = pdf[all_columns]
     return pdf
 
