@@ -900,6 +900,7 @@ def update_daily_bntprices():
 
     url = f"https://api.coingecko.com/api/v3/coins/bancor/market_chart/range"
     params = {"vs_currency": 'usd', "from": from_time_timestamp, "to": to_time_timestamp}
+    headers = {'user-agent':'C'}
     r = requests.get(url=url, params=params, headers=headers).json()
     prices = pd.DataFrame(r['prices'], columns = ['timestamp', 'bntprice'])
     prices.loc[:,'timestamp'] = [int(x/1000) for x in prices.timestamp]
