@@ -1,4 +1,5 @@
 # Databricks notebook source
+import pandas as pd
 import glob
 from bancor_etl.constants import *
 
@@ -6,21 +7,30 @@ from bancor_etl.constants import *
 
 eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
 eventsfiles = [x for x in eventsfiles if 'parquet' in x]
-eventsfiles
 
+new_events_files = []
+for file in eventsfiles:
+    df = pd.read_parquet(file)
+    if len(df) > 0:
+        new_events_files.append(file)
+    else:
+        print(f'Zero columns for: {file}')
+        
+print(len(new_events_files))
 
 # COMMAND ----------
 
 # DBTITLE 1,Spark Tables for all "Events"
-perms = []
-for file in eventsfiles:
+perm_names = []
+for file in new_events_files:
     fileloc = file.replace('/dbfs','')
     perm_name = fileloc.replace('.','_').split('/')[-1].lower()
-    perms += [perm_name]
+    perm_names += [perm_name]
+#     print(perm_name)
 
     # File location and type
     file_location = fileloc
-    file_type = "csv"
+    file_type = "parquet"
 
     # CSV options
     infer_schema = "true"
@@ -36,6 +46,10 @@ for file in eventsfiles:
 
     permanent_table_name = perm_name
     df.write.format("parquet").mode("overwrite").saveAsTable(permanent_table_name)
+
+# COMMAND ----------
+
+perm_names
 
 # COMMAND ----------
 

@@ -1772,20 +1772,3 @@ print(missing_from_datadict)
 # COMMAND ----------
 
 set(sorted(list(set(data_dictionary.Column)))) - set(setcols)
-
-# COMMAND ----------
-
-# eventsfiles = glob.glob(ETL_CSV_STORAGE_DIRECTORY+'Events_**')
-# eventsfiles = [x for x in eventsfiles if 'parquet' in x]
-# print("Events Files:",len(eventsfiles))
-# cols = []
-# for file in eventsfiles:
-#     df = pd.read_parquet(file)
-#     if 'blocknumber' in df.columns:
-#         df.blocknumber = df.blocknumber.astype(int)
-#         print(df.blocknumber.max(), file)
-
-
-# COMMAND ----------
-
-
