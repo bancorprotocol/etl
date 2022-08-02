@@ -63,7 +63,7 @@ TYPE_MAP = {
     },
     'string': {
         'type': str,
-        'fillna': np.nan
+        'fillna': ''
     },
     'datetime': {
         'type': 'datetime64[ns]',
@@ -79,91 +79,76 @@ LIST_OF_SPARK_TABLES = [
     # Add new table names here (see instructions at top of notebook)
 
     # NEW TABLES -> implemented on July 5, 2022
- 'events_all_tokensdeposited_csv',
- 'events_bancornetwork_flashloancompleted_csv',
- 'events_bancornetwork_fundsmigrated_csv',
- 'events_bancornetwork_networkfeeswithdrawn_csv',
- 'events_bancornetwork_pooladded_csv',
- 'events_bancornetwork_poolcollectionadded_csv',
- 'events_bancornetwork_poolcollectionremoved_csv',
- 'events_bancornetwork_poolcreated_csv',
- 'events_bancornetwork_poolremoved_csv',
- 'events_bancornetwork_tokenstraded_csv',
- 'events_bancornetwork_tokenstraded_updated_csv',
- 'events_bancorportal_sushiswappositionmigrated_csv',
- 'events_bancorportal_uniswapv2positionmigrated_csv',
- 'events_bancorv1migration_positionmigrated_csv',
- 'events_bntpool_fundingrenounced_csv',
- 'events_bntpool_fundingrequested_csv',
- 'events_bntpool_fundsburned_csv',
- 'events_bntpool_fundswithdrawn_csv',
- 'events_bntpool_tokensdeposited_csv',
- 'events_bntpool_tokenswithdrawn_csv',
- 'events_bntpool_totalliquidityupdated_csv',
- 'events_combined_tokenstraded_daily_csv',
- 'events_combined_tokenstraded_daily_fees_csv',
- 'events_combined_tokenstraded_daily_volume_csv',
- 'events_externalprotectionvault_fundsburned_csv',
- 'events_externalprotectionvault_fundswithdrawn_csv',
- 'events_externalrewardsvault_fundsburned_csv',
- 'events_externalrewardsvault_fundswithdrawn_csv',
- 'events_mastervault_fundsburned_csv',
- 'events_mastervault_fundswithdrawn_csv',
- 'events_networksettings_defaultflashloanfeeppmupdated_csv',
- 'events_networksettings_flashloanfeeppmupdated_csv',
- 'events_networksettings_fundinglimitupdated_csv',
- 'events_networksettings_minliquidityfortradingupdated_csv',
- 'events_networksettings_tokenaddedtowhitelist_csv',
- 'events_networksettings_tokenremovedfromwhitelist_csv',
- 'events_networksettings_vortexburnrewardupdated_csv',
- 'events_networksettings_withdrawalfeeppmupdated_csv',
- 'events_pendingwithdrawals_withdrawalcancelled_csv',
- 'events_pendingwithdrawals_withdrawalcompleted_csv',
- 'events_pendingwithdrawals_withdrawalcurrentpending_csv',
- 'events_pendingwithdrawals_withdrawalinitiated_csv',
- 'events_poolcollection_defaulttradingfeeppmupdated_csv',
- 'events_poolcollection_depositingenabled_csv',
- 'events_poolcollection_tokensdeposited_csv',
- 'events_poolcollection_tokenswithdrawn_csv',
- 'events_poolcollection_totalliquidityupdated_csv',
- 'events_poolcollection_tradingenabled_csv',
- 'events_poolcollection_tradingfeeppmupdated_csv',
- 'events_poolcollection_tradingliquidityupdated_csv',
- 'events_poolcollection_tradingliquidityupdated_spotrates_csv',
- 'events_pooldata_historical_latest_csv',
- 'events_stakingrewardsclaim_rewardsclaimed_csv',
- 'events_stakingrewardsclaim_rewardsstaked_csv',
- 'events_standardrewards_programcreated_csv',
- 'events_standardrewards_programenabled_csv',
- 'events_standardrewards_programterminated_csv',
- 'events_standardrewards_providerjoined_csv',
- 'events_standardrewards_providerleft_csv',
- 'events_standardrewards_rewardsclaimed_csv',
- 'events_standardrewards_rewardsstaked_csv',
- 'events_trade_slippage_stats_csv',
- 'events_v3_daily_bnttradingliquidity_csv',
- 'events_v3_historical_deficit_by_tkn_csv',
- 'events_v3_historical_deficit_csv',
- 'events_v3_historical_spotrates_emarates_csv',
- 'events_v3_historical_tradingliquidity_csv'
+ 'events_all_tokensdeposited_parquet',
+ 'events_bntpool_fundingrenounced_parquet',
+ 'events_bntpool_fundingrequested_parquet',
+ 'events_bntpool_tokensdeposited_parquet',
+ 'events_bntpool_tokenswithdrawn_parquet',
+ 'events_bntpool_totalliquidityupdated_parquet',
+ 'events_bancornetwork_flashloancompleted_parquet',
+ 'events_bancornetwork_fundsmigrated_parquet',
+ 'events_bancornetwork_pooladded_parquet',
+ 'events_bancornetwork_poolcollectionadded_parquet',
+ 'events_bancornetwork_poolcollectionremoved_parquet',
+ 'events_bancornetwork_poolcreated_parquet',
+ 'events_bancornetwork_poolremoved_parquet',
+ 'events_bancornetwork_tokenstraded_parquet',
+ 'events_bancornetwork_tokenstraded_updated_parquet',
+ 'events_externalprotectionvault_fundswithdrawn_parquet',
+ 'events_mastervault_fundsburned_parquet',
+ 'events_mastervault_fundswithdrawn_parquet',
+ 'events_networksettings_defaultflashloanfeeppmupdated_parquet',
+ 'events_networksettings_fundinglimitupdated_parquet',
+ 'events_networksettings_minliquidityfortradingupdated_parquet',
+ 'events_networksettings_tokenaddedtowhitelist_parquet',
+ 'events_networksettings_vortexburnrewardupdated_parquet',
+ 'events_networksettings_withdrawalfeeppmupdated_parquet',
+ 'events_pendingwithdrawals_withdrawalcancelled_parquet',
+ 'events_pendingwithdrawals_withdrawalcompleted_parquet',
+ 'events_pendingwithdrawals_withdrawalcurrentpending_parquet',
+ 'events_pendingwithdrawals_withdrawalinitiated_parquet',
+ 'events_poolcollection_defaulttradingfeeppmupdated_parquet',
+ 'events_poolcollection_depositingenabled_parquet',
+ 'events_poolcollection_tokensdeposited_parquet',
+ 'events_poolcollection_tokenswithdrawn_parquet',
+ 'events_poolcollection_totalliquidityupdated_parquet',
+ 'events_poolcollection_tradingenabled_parquet',
+ 'events_poolcollection_tradingfeeppmupdated_parquet',
+#  'events_poolcollection_tradingliquidityupdated_parquet',
+ 'events_stakingrewardsclaim_rewardsclaimed_parquet',
+ 'events_stakingrewardsclaim_rewardsstaked_parquet',
+ 'events_standardrewards_programcreated_parquet',
+ 'events_standardrewards_programenabled_parquet',
+ 'events_standardrewards_programterminated_parquet',
+ 'events_standardrewards_providerjoined_parquet',
+ 'events_standardrewards_providerleft_parquet',
+ 'events_standardrewards_rewardsclaimed_parquet',
+ 'events_standardrewards_rewardsstaked_parquet',
+ 'events_trade_slippage_stats_parquet',
+ 'events_combined_tokenstraded_daily_parquet',
+ 'events_pooldata_historical_latest_parquet',
+ 'events_v3_daily_bnttradingliquidity_parquet',
+ 'events_v3_historical_deficit_parquet',
+ 'events_v3_historical_deficit_by_tkn_parquet',
+ 'events_v3_historical_spotrates_emarates_parquet',
+ 'events_v3_historical_tradingliquidity_parquet'
 ]
 
 UNUSED_EVENTS = [
-    'poolcollection_defaulttradingfeeppmupdated_csv',
-    'events_poolcollection_depositingenabled_csv',
-    'events_poolcollection_totalliquidityupdated_csv',
-    'events_poolcollection_tradingfeeppmupdated_csv',
-    'events_poolcollection_tradingliquidityupdated_csv',
-    'events_stakingrewardsclaim_rewardsclaimed_csv',
-    'events_stakingrewardsclaim_rewardsstaked_csv',
-    'events_standardrewards_programcreated_csv',
-    'events_standardrewards_programenabled_csv',
-    'events_standardrewards_programterminated_csv',
-    'events_standardrewards_providerjoined_csv',
-    'events_standardrewards_providerleft_csv',
-    'events_standardrewards_rewardsclaimed_csv',
-    'events_standardrewards_rewardsstaked_csv',
-    'events_poolcollection_tradingliquidityupdated_spotrates_csv',
+    'events_poolcollection_depositingenabled_parquet',
+    'events_poolcollection_totalliquidityupdated_parquet',
+    'events_poolcollection_tradingfeeppmupdated_parquet',
+    'events_poolcollection_tradingliquidityupdated_parquet',
+    'events_stakingrewardsclaim_rewardsclaimed_parquet',
+    'events_stakingrewardsclaim_rewardsstaked_parquet',
+    'events_standardrewards_programcreated_parquet',
+    'events_standardrewards_programenabled_parquet',
+    'events_standardrewards_programterminated_parquet',
+    'events_standardrewards_providerjoined_parquet',
+    'events_standardrewards_providerleft_parquet',
+    'events_standardrewards_rewardsclaimed_parquet',
+    'events_standardrewards_rewardsstaked_parquet',
+    'events_poolcollection_tradingliquidityupdated_spotrates_parquet',
 ]
 
 
@@ -179,9 +164,12 @@ ALL_COLUMNS = list(data_dictionary['Column'].values)
 NUM_UNIQUE_COLUMNS = len(ALL_COLUMNS)
 GOOGLE_SHEETS_MAX_ROWS = int(round(GOOGLE_SHEETS_MAX_CELLS / NUM_UNIQUE_COLUMNS, 0))
 
+col_types = []
 for col in ALL_COLUMNS:
     col_type = data_dictionary[data_dictionary['Column'] == col]['Type'].values[0]
+    col_types += [col_type]
     DEFAULT_VALUE_MAP[col] = TYPE_MAP[col_type]['fillna']
+set(col_types)
 
 # COMMAND ----------
 
@@ -317,14 +305,18 @@ num_chunks, len(combined_df), list(combined_df.columns), TABLEAU_MANAGEABLE_ROWS
 
 # COMMAND ----------
 
-for i in range(num_chunks):
-    handle_google_sheets(f'{EVENTS_TABLE}_{i}', f'{EVENTS_TABLE}_{i}', pdf_chunks[i])
+# for i in range(num_chunks):
+#     handle_google_sheets(f'{EVENTS_TABLE}_{i}', f'{EVENTS_TABLE}_{i}', pdf_chunks[i])
 
 # COMMAND ----------
 
-delete_unused_google_sheets(num_chunks)
+# delete_unused_google_sheets(num_chunks)
 
 # COMMAND ----------
 
 from collections import Counter
-Counter(combined_df.event_name)
+pd.DataFrame.from_dict(Counter(combined_df.event_name), orient='index').sort_values(by=0, ascending = False)
+
+# COMMAND ----------
+
+

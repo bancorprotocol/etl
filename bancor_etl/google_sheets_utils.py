@@ -7,6 +7,8 @@
 """
 import os
 import time
+import datetime
+import pytz
 from typing import Tuple
 import pandas as pd
 import pygsheets
@@ -46,7 +48,7 @@ def clean_google_sheets_name(name: str
     """
     Cleans the google sheets name for clarity.
     """
-    return name.replace('_csv', '').replace('events_', '')
+    return name.replace('_csv', '').replace('events_', '').replace('_parquet', '')
 
 
 def handle_google_sheets_auth():
@@ -228,13 +230,20 @@ def handle_types_and_missing_values(pdf: pd.DataFrame,
             pdf[col] = pdf[col].replace([np.inf, -np.inf], np.nan)
             default_value = default_value_map[col]
             pdf[col] = pdf[col].fillna(default_value)
+            col_type_longform = data_dictionary[data_dictionary['Column'] == col]['Type'].values[0]
             col_type = type_map[
                 data_dictionary[data_dictionary['Column'] == col
                                 ]['Type'].values[0]]['type']
-            if col_type == 'decimal':
+            if col_type_longform == 'decimal':                # mike you had col_type here before which would not have been catching 'decimal'
                 for err in REPLACE_WITH_NA:
                     pdf[col] = pdf[col].replace(err, default_value)
-            pdf[col] = pdf[col].astype(col_type)
+            elif col_type_longform == 'integer':
+                pdf.loc[:,col] = [int(float(x)) for x in pdf.loc[:,col]]
+            elif col_type_longform == 'datetime':
+                pdf.loc[:,col] = [datetime.datetime.fromisoformat(x).astimezone(pytz.utc) for x in pdf.loc[:,col]]
+            else:
+                #pdf.fillna(0, inplace=True)
+                pdf.loc[:,col] = pdf.loc[:,col].astype(col_type)
 
     pdf['bntprice'] = pdf['bntprice'].replace('0E+18', '0.0')
     pdf['emaRate'] = pdf['emaRate'].replace('0E+18', '0.0')
