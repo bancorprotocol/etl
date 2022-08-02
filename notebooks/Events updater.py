@@ -9,7 +9,7 @@ Updating the PoolCollection:
 * In CMD 11: Update the `PoolCollection` dictionary to the latest PoolCollection number
 * In CMD 11: Add the new PoolCollectionTypeXVX dictionary to the `PoolCollectionSet`
 * In CMD 12: Add Events as keys to the latest PoolCollectionTypeXVX dictionary
-* In CMD 35: Add the new PoolCollectionTypeXVX address to the appropriate section (modification needed if new poolData events/structure)
+* In CMD 36 & 47: Add the new PoolCollectionTypeXVX address to the appropriate section (modification needed if new poolData events/structure)
 
 Updating the Events:
 * In CMD 12: Add Events as keys to the appropriate contract dictionary
@@ -263,9 +263,10 @@ PoolCollectionType1V6 = load_contract('PoolCollectionType1V6')
 PoolCollectionType1V7 = load_contract('PoolCollectionType1V7')
 PoolCollectionType1V8 = load_contract('PoolCollectionType1V8')
 PoolCollectionType1V9 = load_contract('PoolCollectionType1V9')
-PoolCollection = load_contract('PoolCollectionType1V9')  ## specific for most recent
+PoolCollectionType1V10 = load_contract('PoolCollectionType1V10')
+PoolCollection = load_contract('PoolCollectionType1V10')  ## specific for most recent
 # make sure to update the events below!!!!!!!!!!!!!!
-PoolCollectionset = [PoolCollectionType1V1, PoolCollectionType1V2, PoolCollectionType1V3, PoolCollectionType1V4, PoolCollectionType1V5, PoolCollectionType1V6, PoolCollectionType1V7, PoolCollectionType1V8, PoolCollectionType1V9]
+PoolCollectionset = [PoolCollectionType1V1, PoolCollectionType1V2, PoolCollectionType1V3, PoolCollectionType1V4, PoolCollectionType1V5, PoolCollectionType1V6, PoolCollectionType1V7, PoolCollectionType1V8, PoolCollectionType1V9, PoolCollectionType1V10]
 PoolCollectionAddys = {PoolCollectionset[i]['addy']:i for i in range(len(PoolCollectionset))}
 
 PoolMigrator = load_contract('PoolMigrator')
@@ -416,6 +417,16 @@ PoolCollectionType1V9['TotalLiquidityUpdated'] = PoolCollectionType1V9['contract
 PoolCollectionType1V9['TradingEnabled'] = PoolCollectionType1V9['contract'].events.TradingEnabled()
 PoolCollectionType1V9['TradingFeePPMUpdated'] = PoolCollectionType1V9['contract'].events.TradingFeePPMUpdated()
 PoolCollectionType1V9['TradingLiquidityUpdated'] = PoolCollectionType1V9['contract'].events.TradingLiquidityUpdated()
+
+PoolCollectionType1V10['DefaultTradingFeePPMUpdated'] = PoolCollectionType1V10['contract'].events.DefaultTradingFeePPMUpdated()
+PoolCollectionType1V10['DepositingEnabled'] = PoolCollectionType1V10['contract'].events.DepositingEnabled()
+PoolCollectionType1V10['TokensDeposited'] = PoolCollectionType1V10['contract'].events.TokensDeposited()
+PoolCollectionType1V10['TokensWithdrawn'] = PoolCollectionType1V10['contract'].events.TokensWithdrawn()
+PoolCollectionType1V10['TotalLiquidityUpdated'] = PoolCollectionType1V10['contract'].events.TotalLiquidityUpdated()
+PoolCollectionType1V10['TradingEnabled'] = PoolCollectionType1V10['contract'].events.TradingEnabled()
+PoolCollectionType1V10['TradingFeePPMUpdated'] = PoolCollectionType1V10['contract'].events.TradingFeePPMUpdated()
+PoolCollectionType1V10['TradingLiquidityUpdated'] = PoolCollectionType1V10['contract'].events.TradingLiquidityUpdated()
+
 
 # COMMAND ----------
 
@@ -1142,7 +1153,7 @@ def update_daily_poolData_historical():  #oold version in the Events Curator
                 emaCompressedNumerator, emaCompressedDenominator = ema_tuple
                 emaInvCompressedNumerator = Decimal('0')
                 emaInvCompressedDenominator = Decimal('1')
-            elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0",]: #V3, V4, V5, V6, V7, V8, V9
+            elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0", "0xd982e001491D414c857F2A1aaA4B43Ccf9f642B4",]: #V3, V4, V5, V6, V7, V8, V9, V10
                 poolToken, tradingFeePPM, tradingEnabled, depositingEnabled, averageRate, tknPool_liquidity = pooldata
                 depositLimit = Decimal('0')
                 bntTradingLiquidity, tknTradingLiquidity, stakingLedger_tknBalance = tknPool_liquidity
@@ -1475,7 +1486,7 @@ def update_basic_poolData():
             emaCompressedNumerator, emaCompressedDenominator = ema_tuple
             emaInvCompressedNumerator = Decimal('0')
             emaInvCompressedDenominator = Decimal('1')
-        elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0"]: #V3, V4, V5, V6, V7, V8, V9
+        elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0", "0xd982e001491D414c857F2A1aaA4B43Ccf9f642B4",]: #V3, V4, V5, V6, V7, V8, V9, V10
             poolToken, tradingFeePPM, tradingEnabled, depositingEnabled, averageRate, tknPool_liquidity = pooldata
             depositLimit = Decimal('0')
             bntTradingLiquidity, tknTradingLiquidity, stakingLedger_tknBalance = tknPool_liquidity
