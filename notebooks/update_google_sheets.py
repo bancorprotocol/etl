@@ -114,7 +114,7 @@ LIST_OF_SPARK_TABLES = [
  'events_poolcollection_totalliquidityupdated_parquet',
  'events_poolcollection_tradingenabled_parquet',
  'events_poolcollection_tradingfeeppmupdated_parquet',
-#  'events_poolcollection_tradingliquidityupdated_parquet',
+ 'events_poolcollection_tradingliquidityupdated_parquet',
  'events_stakingrewardsclaim_rewardsclaimed_parquet',
  'events_stakingrewardsclaim_rewardsstaked_parquet',
  'events_standardrewards_programcreated_parquet',
@@ -305,12 +305,12 @@ num_chunks, len(combined_df), list(combined_df.columns), TABLEAU_MANAGEABLE_ROWS
 
 # COMMAND ----------
 
-# for i in range(num_chunks):
-#     handle_google_sheets(f'{EVENTS_TABLE}_{i}', f'{EVENTS_TABLE}_{i}', pdf_chunks[i])
+for i in range(num_chunks):
+    handle_google_sheets(f'{EVENTS_TABLE}_{i}', f'{EVENTS_TABLE}_{i}', pdf_chunks[i])
 
 # COMMAND ----------
 
-# delete_unused_google_sheets(num_chunks)
+delete_unused_google_sheets(num_chunks)
 
 # COMMAND ----------
 

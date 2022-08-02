@@ -242,8 +242,9 @@ def handle_types_and_missing_values(pdf: pd.DataFrame,
             elif col_type_longform == 'datetime':
                 pdf.loc[:,col] = [datetime.datetime.fromisoformat(x).astimezone(pytz.utc) for x in pdf.loc[:,col]]
             else:
+                pass
                 #pdf.fillna(0, inplace=True)
-                pdf.loc[:,col] = pdf.loc[:,col].astype(col_type)
+            pdf.loc[:,col] = pdf.loc[:,col].astype(col_type)
 
     pdf['bntprice'] = pdf['bntprice'].replace('0E+18', '0.0')
     pdf['emaRate'] = pdf['emaRate'].replace('0E+18', '0.0')
