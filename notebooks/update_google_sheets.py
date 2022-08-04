@@ -75,7 +75,7 @@ TYPE_MAP = {
     },
 }
 
-LIST_OF_SPARK_TABLES = [
+FULL_LIST_OF_SPARK_TABLES = [
     # Add new table names here (see instructions at top of notebook)
 
     # NEW TABLES -> implemented on July 5, 2022
@@ -162,6 +162,9 @@ UNUSED_EVENTS = [
  'events_vbnt_issuance_parquet',
 ]
 
+LIST_OF_SPARK_TABLES = [x for x in FULL_LIST_OF_SPARK_TABLES if x not in UNUSED_EVENTS]
+print(len(FULL_LIST_OF_SPARK_TABLES))
+print(len(LIST_OF_SPARK_TABLES))
 
 # COMMAND ----------
 
@@ -282,7 +285,7 @@ if len(ADDRESS_COLUMNS) > 0:
 
 # COMMAND ----------
 
-combined_df = remove_unused_events(combined_df)
+# combined_df = remove_unused_events(combined_df)
 
 # COMMAND ----------
 
