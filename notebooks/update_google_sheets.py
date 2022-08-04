@@ -75,7 +75,7 @@ TYPE_MAP = {
     },
 }
 
-FULL_LIST_OF_SPARK_TABLES = [
+LIST_OF_SPARK_TABLES = [
     # Add new table names here (see instructions at top of notebook)
 
     # NEW TABLES -> implemented on July 5, 2022
@@ -85,8 +85,8 @@ FULL_LIST_OF_SPARK_TABLES = [
  'events_bntpool_tokensdeposited_parquet',
  'events_bntpool_tokenswithdrawn_parquet',
  'events_bntpool_totalliquidityupdated_parquet',
- 'events_bnt_destruction_parquet',
- 'events_bnt_issuance_parquet',
+#  'events_bnt_destruction_parquet',
+#  'events_bnt_issuance_parquet',
  'events_bnt_vbnt_dailytokensupply_parquet',
  'events_bancornetwork_flashloancompleted_parquet',
  'events_bancornetwork_fundsmigrated_parquet',
@@ -128,8 +128,8 @@ FULL_LIST_OF_SPARK_TABLES = [
  'events_standardrewards_rewardsclaimed_parquet',
  'events_standardrewards_rewardsstaked_parquet',
  'events_trade_slippage_stats_parquet',
- 'events_vbnt_destruction_parquet',
- 'events_vbnt_issuance_parquet',
+#  'events_vbnt_destruction_parquet',
+#  'events_vbnt_issuance_parquet',
  'events_combined_tokenstraded_daily_parquet',
  'events_pooldata_historical_latest_parquet',
  'events_v3_daily_bnttradingliquidity_parquet',
@@ -140,8 +140,8 @@ FULL_LIST_OF_SPARK_TABLES = [
 ]
 
 UNUSED_EVENTS = [
- 'events_bnt_destruction_parquet',
- 'events_bnt_issuance_parquet',
+#  'events_bnt_destruction_parquet',
+#  'events_bnt_issuance_parquet',
  'events_bntpool_tokensdeposited_parquet',
  'events_poolcollection_depositingenabled_parquet',
  'events_poolcollection_tokensdeposited_parquet',
@@ -158,13 +158,13 @@ UNUSED_EVENTS = [
  'events_standardrewards_providerleft_parquet',
  'events_standardrewards_rewardsclaimed_parquet',
  'events_standardrewards_rewardsstaked_parquet',
- 'events_vbnt_destruction_parquet',
- 'events_vbnt_issuance_parquet',
+#  'events_vbnt_destruction_parquet',
+#  'events_vbnt_issuance_parquet',
 ]
 
-LIST_OF_SPARK_TABLES = [x for x in FULL_LIST_OF_SPARK_TABLES if x not in UNUSED_EVENTS]
-print(len(FULL_LIST_OF_SPARK_TABLES))
-print(len(LIST_OF_SPARK_TABLES))
+# LIST_OF_SPARK_TABLES = [x for x in FULL_LIST_OF_SPARK_TABLES if x not in UNUSED_EVENTS]
+# print(len(FULL_LIST_OF_SPARK_TABLES))
+# print(len(LIST_OF_SPARK_TABLES))
 
 # COMMAND ----------
 
@@ -285,7 +285,7 @@ if len(ADDRESS_COLUMNS) > 0:
 
 # COMMAND ----------
 
-# combined_df = remove_unused_events(combined_df)
+combined_df = remove_unused_events(combined_df)
 
 # COMMAND ----------
 
