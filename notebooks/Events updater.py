@@ -337,6 +337,11 @@ StandardRewards['ProviderLeft'] = StandardRewards['contract'].events.ProviderLef
 StandardRewards['RewardsClaimed'] = StandardRewards['contract'].events.RewardsClaimed()
 StandardRewards['RewardsStaked'] = StandardRewards['contract'].events.RewardsStaked()
 
+BNT['Issuance'] = BNT['contract'].events.Issuance()
+BNT['Destruction'] = BNT['contract'].events.Destruction()
+VBNT['Issuance'] = VBNT['contract'].events.Issuance()
+VBNT['Destruction'] = VBNT['contract'].events.Destruction()
+
 PoolCollectionType1V1['DefaultTradingFeePPMUpdated'] = PoolCollectionType1V1['contract'].events.DefaultTradingFeePPMUpdated()
 PoolCollectionType1V1['DepositingEnabled'] = PoolCollectionType1V1['contract'].events.DepositingEnabled()
 PoolCollectionType1V1['TokensDeposited'] = PoolCollectionType1V1['contract'].events.TokensDeposited()
@@ -506,11 +511,36 @@ events_list = [(BancorNetwork,"FlashLoanCompleted"),
                 (StandardRewards,"ProviderLeft"),
                 (StandardRewards,"RewardsClaimed"),
                 (StandardRewards,"RewardsStaked"),
+                
+                (BNT,"Issuance"),
+                (BNT,"Destruction"),
+                (VBNT,"Issuance"),
+                (VBNT,"Destruction")
+               
               ]
 
 # COMMAND ----------
 
 fromBlock = 14609000
+
+# COMMAND ----------
+
+# run once on setup
+df = pd.read_parquet('/dbfs/FileStore/tables/dev/onchain_events/Events_BNT_Issuance.parquet')
+df = df.astype(str)
+df.to_parquet(ETL_CSV_STORAGE_DIRECTORY + 'Events_BNT_Issuance.parquet', compression = 'gzip')
+
+df = pd.read_parquet('/dbfs/FileStore/tables/dev/onchain_events/Events_BNT_Destruction.parquet')
+df = df.astype(str)
+df.to_parquet(ETL_CSV_STORAGE_DIRECTORY + 'Events_BNT_Destruction.parquet', compression = 'gzip')
+
+df = pd.read_parquet('/dbfs/FileStore/tables/dev/onchain_events/Events_VBNT_Issuance.parquet')
+df = df.astype(str)
+df.to_parquet(ETL_CSV_STORAGE_DIRECTORY + 'Events_VBNT_Issuance.parquet', compression = 'gzip')
+
+df = pd.read_parquet('/dbfs/FileStore/tables/dev/onchain_events/Events_VBNT_Destruction.parquet')
+df = df.astype(str)
+df.to_parquet(ETL_CSV_STORAGE_DIRECTORY + 'Events_VBNT_Destruction.parquet', compression = 'gzip')
 
 # COMMAND ----------
 
@@ -655,6 +685,14 @@ def update_TEMPLATE_events(contract, name_of_event):
                 newcollectedData.loc[:,decimallabel] = [tokenDecimals[x] for x in newcollectedData.loc[:,symbollabel]]
         collectedData = newcollectedData.copy()
 
+    if "_amount" in collectedData.columns:
+        collectedData.loc[:,'amount'] = collectedData.loc[:,'_amount']
+        collectedData.drop('_amount', axis=1, inplace=True)
+        
+    if "_amount" in master.columns:
+        master.loc[:,'amount'] = master.loc[:,'_amount']
+        master.drop('_amount', axis=1, inplace=True)
+    
     collectedData = collectedData.astype(str)
     master = master.astype(str)
     
@@ -778,7 +816,7 @@ for stringdf in ["Events_PoolCollection_TotalLiquidityUpdated", "Events_Standard
 # When all decimals are 18
 for stringdf in ["Events_BNTPool_FundingRenounced", "Events_BNTPool_FundingRequested", "Events_BNTPool_TokensDeposited", "Events_BNTPool_TokensWithdrawn", "Events_BNTPool_TotalLiquidityUpdated",
                  "Events_NetworkSettings_FundingLimitUpdated", "Events_NetworkSettings_MinLiquidityForTradingUpdated", "Events_NetworkSettings_VortexBurnRewardUpdated", "Events_StakingRewardsClaim_RewardsClaimed",
-                "Events_StakingRewardsClaim_RewardsStaked", "Events_StandardRewards_RewardsClaimed", "Events_StandardRewards_RewardsStaked"]:
+                "Events_StakingRewardsClaim_RewardsStaked", "Events_StandardRewards_RewardsClaimed", "Events_StandardRewards_RewardsStaked", "Events_BNT_Issuance","Events_BNT_Destruction","Events_VBNT_Issuance","Events_VBNT_Destruction",]:
     df = pd.read_parquet(ETL_CSV_STORAGE_DIRECTORY+f"{stringdf}.parquet")
     for col in df.columns:
         if "_real" not in col:
@@ -808,7 +846,7 @@ def repair_missing_times(eventsfiles):
     blockNumber_to_timestamp.loc[:,'timestamp'] = [int(float(x)) for x in blockNumber_to_timestamp.timestamp]
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     blockNumber_to_timestamp.blocknumber = blockNumber_to_timestamp.blocknumber.astype(int)
-    filter_out = [ETL_CSV_STORAGE_DIRECTORY+'Events_poolData_Historical_latest.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_daily_bntTradingLiquidity.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit_by_tkn.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_spotRates_emaRates.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_tradingLiquidity.parquet']
+    filter_out = [ETL_CSV_STORAGE_DIRECTORY+'Events_poolData_Historical_latest.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_daily_bntTradingLiquidity.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_deficit_by_tkn.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_spotRates_emaRates.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_v3_historical_tradingLiquidity.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_BNT_Issuance.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_BNT_Destruction.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_VBNT_Issuance.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_VBNT_Destruction.parquet', ETL_CSV_STORAGE_DIRECTORY+'Events_BNT_VBNT_DailyTokenSupply.parquet',]
     eventsfiles2 = [x for x in eventsfiles if x not in filter_out]
     for file in eventsfiles2:
         print(file)
@@ -1008,7 +1046,6 @@ def create_updated_TokensTraded_table():
     blockNumber_to_timestamp.loc[:,'timestamp'] = [int(float(x)) for x in blockNumber_to_timestamp.timestamp]
     blockNumber_to_timestamp.rename(columns = {'blockNumber':'blocknumber'}, inplace=True)
     
-    get_updatePriceData('bnt')
     bntprices = pd.read_parquet(ETL_CSV_STORAGE_DIRECTORY+f'HistoricalPriceData_BNT.parquet')
     bntprices = bntprices[['time', 'close']].copy()
     bntprices.loc[:,'time'] = [int(float(x)) for x in bntprices.time]
@@ -1088,15 +1125,15 @@ create_updated_TokensTraded_table()
 
 # COMMAND ----------
 
-# may have to run this once on set up
-all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_20*')
-all_files_csv = [x.replace('.csv','') for x in all_files if 'csv' in x]
-all_files_par = [x.replace('.parquet','') for x in all_files if 'parquet' in x]
-missing_pars = [x+'.csv' for x in all_files_csv if x not in all_files_par]
-for file in missing_pars:
-    df = pd.read_csv(file, index_col=0, dtype=str)
-    file_par = file.replace(".csv", ".parquet")
-    df.to_parquet(file_par, compression='gzip')
+# # may have to run this once on set up - legacy for csv to parquet format
+# all_files = glob.glob(ETL_CSV_STORAGE_DIRECTORY+f'poolData_Historical_20*')
+# all_files_csv = [x.replace('.csv','') for x in all_files if 'csv' in x]
+# all_files_par = [x.replace('.parquet','') for x in all_files if 'parquet' in x]
+# missing_pars = [x+'.csv' for x in all_files_csv if x not in all_files_par]
+# for file in missing_pars:
+#     df = pd.read_csv(file, index_col=0, dtype=str)
+#     file_par = file.replace(".csv", ".parquet")
+#     df.to_parquet(file_par, compression='gzip')
 
 # COMMAND ----------
 
@@ -1757,6 +1794,62 @@ def get_slippage_stats():
 # COMMAND ----------
 
 get_slippage_stats()
+
+# COMMAND ----------
+
+# DBTITLE 1,BNT/VBNT Supply Summary
+def get_bntvbnt_tokensupply():
+    # vbnt
+    vbnt_raw_issuance = pd.read_parquet(ETL_CSV_STORAGE_DIRECTORY+f'Events_VBNT_Issuance.parquet')
+    vbnt_raw_issuance.loc[:,'amount_real'] = [Decimal(x) for x in vbnt_raw_issuance.amount_real]
+    vbnt_raw_issuance.loc[:,'day'] = [str(x)[:10] for x in vbnt_raw_issuance.time]
+    daily_vbnt_issuance = vbnt_raw_issuance[['day','amount_real']].groupby('day').sum(numeric_only=False).reset_index()
+    daily_vbnt_issuance.columns = ['day', 'vbnt_issuance']
+
+    vbnt_raw_destruction = pd.read_parquet(ETL_CSV_STORAGE_DIRECTORY+f'Events_VBNT_Destruction.parquet')
+    vbnt_raw_destruction.loc[:,'amount_real'] = [Decimal(x) for x in vbnt_raw_destruction.amount_real]
+    vbnt_raw_destruction.loc[:,'day'] = [str(x)[:10] for x in vbnt_raw_destruction.time]
+    daily_vbnt_destruction = vbnt_raw_destruction[['day','amount_real']].groupby('day').sum(numeric_only=False).reset_index()
+    daily_vbnt_destruction.columns = ['day', 'vbnt_destruction']
+
+    daily_vbnt = pd.merge(daily_vbnt_issuance, daily_vbnt_destruction, how='outer')
+    daily_vbnt.fillna(Decimal('0'), inplace=True)
+    daily_vbnt.sort_values(by='day', inplace=True)
+    daily_vbnt.loc[:,'daily_vbnt_net'] = daily_vbnt.vbnt_issuance - daily_vbnt.vbnt_destruction
+    daily_vbnt.loc[:,'vbnt_supply'] = daily_vbnt.daily_vbnt_net.cumsum()
+    
+    #bnt
+    bnt_raw_issuance = pd.read_parquet(ETL_CSV_STORAGE_DIRECTORY+f'Events_BNT_Issuance.parquet')
+    bnt_raw_issuance.loc[:,'amount_real'] = [Decimal(x) for x in bnt_raw_issuance.amount_real]
+    bnt_raw_issuance.loc[:,'day'] = [str(x)[:10] for x in bnt_raw_issuance.time]
+    daily_bnt_issuance = bnt_raw_issuance[['day','amount_real']].groupby('day').sum(numeric_only=False).reset_index()
+    daily_bnt_issuance.columns = ['day', 'bnt_issuance']
+
+    bnt_raw_destruction = pd.read_parquet(ETL_CSV_STORAGE_DIRECTORY+f'Events_BNT_Destruction.parquet')
+    bnt_raw_destruction.loc[:,'amount_real'] = [Decimal(x) for x in bnt_raw_destruction.amount_real]
+    bnt_raw_destruction.loc[:,'day'] = [str(x)[:10] for x in bnt_raw_destruction.time]
+    daily_bnt_destruction = bnt_raw_destruction[['day','amount_real']].groupby('day').sum(numeric_only=False).reset_index()
+    daily_bnt_destruction.columns = ['day', 'bnt_destruction']
+
+    daily_bnt = pd.merge(daily_bnt_issuance, daily_bnt_destruction, how='outer')
+    daily_bnt.fillna(Decimal('0'), inplace=True)
+    daily_bnt.sort_values(by='day', inplace=True)
+    daily_bnt.loc[:,'daily_bnt_net'] = daily_bnt.bnt_issuance - daily_bnt.bnt_destruction
+    daily_bnt.loc[:,'bnt_supply'] = daily_bnt.daily_bnt_net.cumsum()
+    
+    #combine
+    dates = pd.DataFrame(pd.date_range(start="2017-06-10",end=str(datetime.datetime.now())[:10], freq='D'), columns = ['day'])
+    dates = dates.astype(str)
+    bnt_vbnt_supply = pd.merge(dates, daily_bnt, how='left', on='day')
+    bnt_vbnt_supply = pd.merge(bnt_vbnt_supply, daily_vbnt, how='left', on='day')
+    bnt_vbnt_supply.fillna(Decimal('0'), inplace=True)
+    bnt_vbnt_supply = bnt_vbnt_supply.astype(str)
+    bnt_vbnt_supply.rename(columns = {'day': 'time'}, inplace=True)
+    bnt_vbnt_supply.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'Events_BNT_VBNT_DailyTokenSupply.parquet', compression='gzip')
+
+# COMMAND ----------
+
+get_bntvbnt_tokensupply()
 
 # COMMAND ----------
 

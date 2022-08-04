@@ -49,10 +49,12 @@ for file in new_events_files:
 
 # COMMAND ----------
 
+# Lists events tables that were converted to sparks
 perm_names
 
 # COMMAND ----------
 
+# Lists all tables labelled as events
 sparktables = [i.name for i in spark.catalog.listTables() if 'events_' in i.name]
 print(len(sparktables))
 sparktables
