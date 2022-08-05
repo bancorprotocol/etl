@@ -150,6 +150,7 @@ def update_tokenInfo():
     emptys.loc[:,'poolTokenAddress'] = list(emptypoolTokenAddresses.values())
 
     tokenInfo3 = tokenInfo2.drop(emptys.index).append(emptys)
+    tokenInfo3.loc[:,'decimals'] = [int(float(x)) for x in tokenInfo3.decimals]
     tokenInfo3.sort_values(by='symbol', inplace=True)
     tokenInfo3.reset_index(inplace=True, drop=True)
     tokenInfo3 = tokenInfo3.astype(str)
