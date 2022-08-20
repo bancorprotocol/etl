@@ -45,6 +45,14 @@ ETL_USER_EMAIL
 
 # COMMAND ----------
 
+# - Symbol for Display
+# - Value can be anything
+# - event name as “date options” or something similar
+
+
+
+# COMMAND ----------
+
 ADDRESS_COLUMNS = [
     # 'contextId', 'pool', 'txhash', 'provider'
 ]
@@ -136,7 +144,8 @@ LIST_OF_SPARK_TABLES = [
  'events_v3_historical_deficit_parquet',
  'events_v3_historical_deficit_by_tkn_parquet',
  'events_v3_historical_spotrates_emarates_parquet',
- 'events_v3_historical_tradingliquidity_parquet'
+ 'events_v3_historical_tradingliquidity_parquet',
+ 'events_date_options_parquet'
 ]
 
 UNUSED_EVENTS = [
