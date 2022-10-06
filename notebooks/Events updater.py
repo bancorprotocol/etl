@@ -900,16 +900,29 @@ def update_daily_bntprices():
     from_time_timestamp = int(from_time.timestamp())
     to_time_timestamp = int(to_time.timestamp())
 
-    url = f"https://api.coingecko.com/api/v3/coins/bancor/market_chart/range"
-    params = {"vs_currency": 'usd', "from": from_time_timestamp, "to": to_time_timestamp}
-    headers = {'user-agent':'C'}
-    r = requests.get(url=url, params=params, headers=headers).json()
-    prices = pd.DataFrame(r['prices'], columns = ['timestamp', 'bntprice'])
-    prices.loc[:,'timestamp'] = [int(x/1000) for x in prices.timestamp]
-    prices.loc[:,'day'] = [datetime.datetime.fromtimestamp(x) for x in prices.timestamp]
-    prices.set_index('day', inplace=True)
-    prices = prices.astype(str)
-    prices.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'cg_daily_bntprices.parquet', compression='gzip')
+    prices = pd.DataFrame()
+    success = False
+    while success == False:
+        try:
+            url = f"https://api.coingecko.com/api/v3/coins/bancor/market_chart/range"
+            params = {"vs_currency": 'usd', "from": from_time_timestamp, "to": to_time_timestamp}
+            headers = {'user-agent':'C'}
+            r = requests.get(url=url, params=params, headers=headers).json()
+            prices = pd.DataFrame(r['prices'], columns = ['timestamp', 'bntprice'])
+            prices.loc[:,'timestamp'] = [int(x/1000) for x in prices.timestamp]
+            prices.loc[:,'day'] = [datetime.datetime.fromtimestamp(x) for x in prices.timestamp]
+            prices.set_index('day', inplace=True)
+            prices = prices.astype(str)
+            prices.to_parquet(ETL_CSV_STORAGE_DIRECTORY+'cg_daily_bntprices.parquet', compression='gzip')
+            success = True
+        except Exception as e:
+            etext = str(e)
+            if 'JSONDecodeError' in etext:
+                print(etext)
+                print('Trying again')
+                success = False
+            else:
+                break
 
 # COMMAND ----------
 
