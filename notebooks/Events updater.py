@@ -434,6 +434,7 @@ tokenSymbols = {tokenInfo.tokenAddress[i]:tokenInfo.symbol[i] for i in tokenInfo
 tokenDecimals = {tokenInfo.symbol[i]:str(tokenInfo.decimals[i]) for i in tokenInfo.index}
 tokenContracts = {tokenInfo.symbol[i]:get_token_contract(tokenInfo.tokenAddress[i]) for i in tokenInfo.index}
 poolTokenAddresses = {'bn'+str(tokenInfo.symbol[i]):tokenInfo.poolTokenAddress[i] for i in tokenInfo.index}
+poolTokenSymbols = {y: x for x, y in poolTokenAddresses.items()}
 poolTokenContracts = get_pool_token_contracts(poolTokenAddresses)
 tokenDecimals2 = tokenDecimals.copy()
 for tkn in tokenDecimals2.keys():
@@ -643,12 +644,21 @@ def update_TEMPLATE_events(contract, name_of_event):
             newcollectedData = pd.merge(collectedData, blockNumber_to_timestamp, on='blocknumber', how='left')
         else:
             newcollectedData = collectedData.copy()
-        for label in ['pool', 'token', 'sourceToken', 'targetToken', 'rewardsToken']:
-            if label in newcollectedData.columns:
-                symbollabel = label.replace('Token','')+"Symbol"
-                newcollectedData.loc[:,symbollabel] = [tokenSymbols[x] for x in newcollectedData.loc[:,label]]
-                decimallabel = label.replace('Token','')+"Decimals"
-                newcollectedData.loc[:,decimallabel] = [tokenDecimals[x] for x in newcollectedData.loc[:,symbollabel]]
+            
+        if (name_of_contract == 'ExternalRewardsVault') & (name_of_event == 'FundsBurned'):
+            for label in ['token']:
+                if label in newcollectedData.columns:
+                    symbollabel = label.replace('Token','')+"Symbol"
+                    newcollectedData.loc[:,symbollabel] = [poolTokenSymbols[x] for x in newcollectedData.loc[:,label]]
+                    decimallabel = label.replace('Token','')+"Decimals"
+                    newcollectedData.loc[:,decimallabel] = [tokenDecimals[x] for x in newcollectedData.loc[:,symbollabel]]    
+        else:
+            for label in ['pool', 'token', 'sourceToken', 'targetToken', 'rewardsToken']:
+                if label in newcollectedData.columns:
+                    symbollabel = label.replace('Token','')+"Symbol"
+                    newcollectedData.loc[:,symbollabel] = [tokenSymbols[x] for x in newcollectedData.loc[:,label]]
+                    decimallabel = label.replace('Token','')+"Decimals"
+                    newcollectedData.loc[:,decimallabel] = [tokenDecimals[x] for x in newcollectedData.loc[:,symbollabel]]
         collectedData = newcollectedData.copy()
 
     if "_amount" in collectedData.columns:
