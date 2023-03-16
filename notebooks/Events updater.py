@@ -4,18 +4,16 @@ Instructions:
 
 Updating the PoolCollection:
 * Upload the new protocol jsons folder to '/dbfs/FileStore/tables/' as ETL_PROTOCOL_JSON_DIRECTORY
-* In CMD 3: Update the `ETL_PROTOCOL_JSON_DIRECTORY` to this jsons folder 
-* In CMD 11: Add a new contract dictionary for the new PoolCollectionTypeXVX using `load_contract`
-* In CMD 11: Update the `PoolCollection` dictionary to the latest PoolCollection number
-* In CMD 11: Add the new PoolCollectionTypeXVX dictionary to the `PoolCollectionSet`
-* In CMD 12: Add Events as keys to the latest PoolCollectionTypeXVX dictionary
-* In CMD 36 & 47: Add the new PoolCollectionTypeXVX address to the appropriate section (modification needed if new poolData events/structure)
+* In Cluster Details: Update the `ETL_PROTOCOL_JSON_DIRECTORY` to this jsons folder 
+* In CMD 12: Add a new contract dictionary for the new PoolCollectionTypeXVX using `load_contract`
+* In CMD 12: Update the `PoolCollection` dictionary to the latest PoolCollection number
+* In CMD 12: Add the new PoolCollectionTypeXVX dictionary to the `PoolCollectionSet`
+* In CMD 13: Add Events as keys to the latest PoolCollectionTypeXVX dictionary
+* In CMD 35 & 46: Add the new PoolCollectionTypeXVX address to the appropriate section (modification needed if new poolData events/structure)
 
 Updating the Events:
-* In CMD 12: Add Events as keys to the appropriate contract dictionary
-* In CMD 13: Add the contract, event pair to the list
-
-
+* In CMD 13: Add Events as keys to the appropriate contract dictionary
+* In CMD 14: Add the contract, event pair to the list
 
 """
 
@@ -41,7 +39,7 @@ url = f'https://eth-mainnet.alchemyapi.io/v2/{ETL_ALCHEMY_APIKEY}'
 
 # HTTPProvider:
 w3 = Web3(Web3.HTTPProvider(url))
-w3.isConnected()
+w3.is_connected()
 
 # COMMAND ----------
 
@@ -99,11 +97,11 @@ def get_token_symbols(tknContracts):
     symbols = {}
     for key in tknContracts.keys():
         if key == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
-            symbols['eth']=w3.toChecksumAddress(key)
+            symbols['eth']=w3.to_checksum_address(key)
         elif key == '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2':
-            symbols['mkr']=w3.toChecksumAddress(key)  
+            symbols['mkr']=w3.to_checksum_address(key)  
         else:
-            symbols[tknContracts[key].functions.symbol().call().lower()] = w3.toChecksumAddress(key)
+            symbols[tknContracts[key].functions.symbol().call().lower()] = w3.to_checksum_address(key)
     return(symbols)
         
 def get_pool_tokens(tokenAddresses):
@@ -166,7 +164,7 @@ def update_blockNumber_to_timestamp():
     blockNumber_to_timestamp.loc[:,'blockNumber'] = [int(float(x)) for x in blockNumber_to_timestamp.blockNumber]
     blockNumber_to_timestamp.loc[:,'timestamp'] = [int(float(x)) for x in blockNumber_to_timestamp.timestamp]
     blocks = list(range(blockNumber_to_timestamp.blockNumber.max(),currentBlock['number']))
-    timestamps = [int(w3.eth.getBlock(x).timestamp) for x in blocks]
+    timestamps = [int(w3.eth.get_block(x).timestamp) for x in blocks]
     times = [datetime.datetime.fromtimestamp(x).astimezone(datetime.timezone.utc) for x in timestamps]
     df = blockNumber_to_timestamp.append(pd.DataFrame([blocks,timestamps,times], index=['blockNumber','timestamp','time']).T)
     df = df[~df.timestamp.duplicated()].copy()
@@ -206,12 +204,12 @@ def load_contract(base_contract_string):
     if os.path.exists(proxy_file): 
         g = open(proxy_file)
         proxy_contract_data = json.load(g)
-        addy = w3.toChecksumAddress(proxy_contract_data['address'])
+        addy = w3.to_checksum_address(proxy_contract_data['address'])
         g.close()
     else:
         f = open(standard_file)
         standard_contract_data = json.load(f)
-        addy = w3.toChecksumAddress(standard_contract_data['address'])
+        addy = w3.to_checksum_address(standard_contract_data['address'])
         f.close() 
         
     if os.path.exists(implementation_file):
@@ -240,7 +238,7 @@ BancorNetworkProxy = load_contract('BancorNetworkProxy')
 BancorPortal = load_contract('BancorPortal')
 BancorV1Migration = load_contract('BancorV1Migration')
 ExternalProtectionVault = load_contract('ExternalProtectionVault')
-ExternalRewardsVault = load_contract('ExternalRewardsVault')
+ExternalAutoCompoundingRewardsVault = load_contract('ExternalAutoCompoundingRewardsVault')
 # LiquidityProtection = load_contract('LiquidityProtection')
 MasterVault = load_contract('MasterVault')
 NetworkSettings = load_contract('NetworkSettings')
@@ -257,9 +255,10 @@ PoolCollectionType1V7 = load_contract('PoolCollectionType1V7')
 PoolCollectionType1V8 = load_contract('PoolCollectionType1V8')
 PoolCollectionType1V9 = load_contract('PoolCollectionType1V9')
 PoolCollectionType1V10 = load_contract('PoolCollectionType1V10')
-PoolCollection = load_contract('PoolCollectionType1V10')  ## specific for most recent
+PoolCollectionType1V11 = load_contract('PoolCollectionType1V11')
+PoolCollection = load_contract('PoolCollectionType1V11')  ## specific for most recent
 # make sure to update the events below!!!!!!!!!!!!!!
-PoolCollectionset = [PoolCollectionType1V1, PoolCollectionType1V2, PoolCollectionType1V3, PoolCollectionType1V4, PoolCollectionType1V5, PoolCollectionType1V6, PoolCollectionType1V7, PoolCollectionType1V8, PoolCollectionType1V9, PoolCollectionType1V10]
+PoolCollectionset = [PoolCollectionType1V1, PoolCollectionType1V2, PoolCollectionType1V3, PoolCollectionType1V4, PoolCollectionType1V5, PoolCollectionType1V6, PoolCollectionType1V7, PoolCollectionType1V8, PoolCollectionType1V9, PoolCollectionType1V10, PoolCollectionType1V11]
 PoolCollectionAddys = {PoolCollectionset[i]['addy']:i for i in range(len(PoolCollectionset))}
 
 PoolMigrator = load_contract('PoolMigrator')
@@ -300,8 +299,8 @@ BNTPool['TotalLiquidityUpdated'] = BNTPool['contract'].events.TotalLiquidityUpda
 ExternalProtectionVault['FundsBurned'] = ExternalProtectionVault['contract'].events.FundsBurned()
 ExternalProtectionVault['FundsWithdrawn'] = ExternalProtectionVault['contract'].events.FundsWithdrawn()
 
-ExternalRewardsVault['FundsBurned'] = ExternalRewardsVault['contract'].events.FundsBurned()
-ExternalRewardsVault['FundsWithdrawn'] = ExternalRewardsVault['contract'].events.FundsWithdrawn()
+ExternalAutoCompoundingRewardsVault['FundsBurned'] = ExternalAutoCompoundingRewardsVault['contract'].events.FundsBurned()
+ExternalAutoCompoundingRewardsVault['FundsWithdrawn'] = ExternalAutoCompoundingRewardsVault['contract'].events.FundsWithdrawn()
 
 MasterVault['FundsBurned'] = MasterVault['contract'].events.FundsBurned()
 MasterVault['FundsWithdrawn'] = MasterVault['contract'].events.FundsWithdrawn()
@@ -323,7 +322,7 @@ StakingRewardsClaim['RewardsClaimed'] = StakingRewardsClaim['contract'].events.R
 StakingRewardsClaim['RewardsStaked'] = StakingRewardsClaim['contract'].events.RewardsStaked()
 
 StandardRewards['ProgramCreated'] = StandardRewards['contract'].events.ProgramCreated()
-StandardRewards['ProgramEnabled'] = StandardRewards['contract'].events.ProgramEnabled()
+# StandardRewards['ProgramEnabled'] = StandardRewards['contract'].events.ProgramEnabled()
 StandardRewards['ProgramTerminated'] = StandardRewards['contract'].events.ProgramTerminated()
 StandardRewards['ProviderJoined'] = StandardRewards['contract'].events.ProviderJoined()
 StandardRewards['ProviderLeft'] = StandardRewards['contract'].events.ProviderLeft()
@@ -425,6 +424,15 @@ PoolCollectionType1V10['TradingEnabled'] = PoolCollectionType1V10['contract'].ev
 PoolCollectionType1V10['TradingFeePPMUpdated'] = PoolCollectionType1V10['contract'].events.TradingFeePPMUpdated()
 PoolCollectionType1V10['TradingLiquidityUpdated'] = PoolCollectionType1V10['contract'].events.TradingLiquidityUpdated()
 
+PoolCollectionType1V11['DefaultTradingFeePPMUpdated'] = PoolCollectionType1V11['contract'].events.DefaultTradingFeePPMUpdated()
+PoolCollectionType1V11['DepositingEnabled'] = PoolCollectionType1V11['contract'].events.DepositingEnabled()
+PoolCollectionType1V11['TokensDeposited'] = PoolCollectionType1V11['contract'].events.TokensDeposited()
+PoolCollectionType1V11['TokensWithdrawn'] = PoolCollectionType1V11['contract'].events.TokensWithdrawn()
+PoolCollectionType1V11['TotalLiquidityUpdated'] = PoolCollectionType1V11['contract'].events.TotalLiquidityUpdated()
+PoolCollectionType1V11['TradingEnabled'] = PoolCollectionType1V11['contract'].events.TradingEnabled()
+PoolCollectionType1V11['TradingFeePPMUpdated'] = PoolCollectionType1V11['contract'].events.TradingFeePPMUpdated()
+PoolCollectionType1V11['TradingLiquidityUpdated'] = PoolCollectionType1V11['contract'].events.TradingLiquidityUpdated()
+
 
 # COMMAND ----------
 
@@ -476,8 +484,8 @@ events_list = [(BancorNetwork,"FlashLoanCompleted"),
                 (ExternalProtectionVault,"FundsBurned"),
                 (ExternalProtectionVault,"FundsWithdrawn"),
 
-                (ExternalRewardsVault,"FundsBurned"),
-                (ExternalRewardsVault,"FundsWithdrawn"),
+                (ExternalAutoCompoundingRewardsVault,"FundsBurned"),
+                (ExternalAutoCompoundingRewardsVault,"FundsWithdrawn"),
 
                 (MasterVault,"FundsBurned"),
                 (MasterVault,"FundsWithdrawn"),
@@ -499,7 +507,7 @@ events_list = [(BancorNetwork,"FlashLoanCompleted"),
                 (StakingRewardsClaim,"RewardsStaked"),
 
                 (StandardRewards,"ProgramCreated"),
-                (StandardRewards,"ProgramEnabled"),
+                # (StandardRewards,"ProgramEnabled"),
                 (StandardRewards,"ProgramTerminated"),
                 (StandardRewards,"ProviderJoined"),
                 (StandardRewards,"ProviderLeft"),
@@ -546,7 +554,7 @@ def update_PoolCollection_events():
         collectedData = pd.DataFrame()
         for PoolCollection1 in PoolCollectionset:
             try:
-                event_filter = PoolCollection1[name_of_event].createFilter(fromBlock=fromBlock, toBlock=toBlock-1)
+                event_filter = PoolCollection1[name_of_event].create_filter(fromBlock=fromBlock, toBlock=toBlock-1)
                 events = event_filter.get_all_entries()
 
                 for i in range(len(events)):
@@ -554,7 +562,7 @@ def update_PoolCollection_events():
                     df['blocknumber'] = dict(events[i])['blockNumber']
                     df['txhash'] = dict(events[i])['transactionHash'].hex()
                     if 'contextId' in df.columns:
-                        df.loc[:,'contextId'] = [w3.toHex(x) for x in df.contextId]
+                        df.loc[:,'contextId'] = [w3.to_hex(x) for x in df.contextId]
                     else:
                         pass
                     df = df.astype(str)  
@@ -617,7 +625,7 @@ def update_TEMPLATE_events(contract, name_of_event):
         fromBlock = 14609000
         master = pd.DataFrame()
     
-    event_filter = contract[f'{name_of_event}'].createFilter(fromBlock=fromBlock+1, toBlock=toBlock-1)
+    event_filter = contract[f'{name_of_event}'].create_filter(fromBlock=fromBlock+1, toBlock=toBlock-1)
     events = event_filter.get_all_entries()
 
     collectedData = pd.DataFrame()
@@ -626,7 +634,7 @@ def update_TEMPLATE_events(contract, name_of_event):
         df['blocknumber'] = dict(events[i])['blockNumber']
         df['txhash'] = dict(events[i])['transactionHash'].hex()
         if 'contextId' in df.columns:
-            df.loc[:,'contextId'] = [w3.toHex(x) for x in df.contextId]
+            df.loc[:,'contextId'] = [w3.to_hex(x) for x in df.contextId]
         else:
             pass
         df = df.astype(str)  
@@ -645,7 +653,7 @@ def update_TEMPLATE_events(contract, name_of_event):
         else:
             newcollectedData = collectedData.copy()
             
-        if (name_of_contract == 'ExternalRewardsVault') & (name_of_event == 'FundsBurned'):
+        if (name_of_contract == 'ExternalAutoCompoundingRewardsVault') & (name_of_event == 'FundsBurned'):
             for label in ['token']:
                 if label in newcollectedData.columns:
                     symbollabel = label.replace('Token','')+"Symbol"
@@ -1125,7 +1133,7 @@ def update_daily_poolData_historical():
         for tkn in pool_list:
 
             if tkn == 'eth':
-                masterVault_tknBalance = w3.eth.getBalance(MasterVault['addy'], blocknumber)
+                masterVault_tknBalance = w3.eth.get_balance(MasterVault['addy'], blocknumber)
             else:
                 try:
                     masterVault_tknBalance = tokenContracts[tkn].functions.balanceOf(MasterVault['addy']).call(block_identifier=blocknumber)
@@ -1143,15 +1151,19 @@ def update_daily_poolData_historical():
 
         for tkn in tokenListnz:
             addy = BancorNetwork['contract'].functions.collectionByPool(tokenAddresses[tkn]).call(block_identifier = blocknumber)
-            pooldata = PoolCollectionset[PoolCollectionAddys[addy]]['contract'].functions.poolData(tokenAddresses[tkn]).call(block_identifier=blocknumber)
-            if addy in ["0x6f9124C32a9f6E532C908798F872d5472e9Cb714", "0xEC9596e0eB67228d61a12CfdB4b3608281F261b3",]: # V1, V2
+            if addy == '0x0000000000000000000000000000000000000000':
+                poolToken = tradingFeePPM = tradingEnabled = depositingEnabled =  depositLimit = bntTradingLiquidity = tknTradingLiquidity = stakingLedger_tknBalance = ema_blocknum = emaCompressedNumerator = emaInvCompressedNumerator = Decimal('0')
+                emaCompressedDenominator = emaInvCompressedDenominator = Decimal('1')
+            elif addy in ["0x6f9124C32a9f6E532C908798F872d5472e9Cb714", "0xEC9596e0eB67228d61a12CfdB4b3608281F261b3",]: # V1, V2
+                pooldata = PoolCollectionset[PoolCollectionAddys[addy]]['contract'].functions.poolData(tokenAddresses[tkn]).call(block_identifier=blocknumber)
                 poolToken, tradingFeePPM, tradingEnabled, depositingEnabled, averageRate, depositLimit, tknPool_liquidity = pooldata
                 bntTradingLiquidity, tknTradingLiquidity, stakingLedger_tknBalance = tknPool_liquidity
                 ema_blocknum, ema_tuple = averageRate
                 emaCompressedNumerator, emaCompressedDenominator = ema_tuple
                 emaInvCompressedNumerator = Decimal('0')
                 emaInvCompressedDenominator = Decimal('1')
-            elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0", "0xd982e001491D414c857F2A1aaA4B43Ccf9f642B4",]: #V3, V4, V5, V6, V7, V8, V9, V10
+            elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0", "0xd982e001491D414c857F2A1aaA4B43Ccf9f642B4", "0xB67d563287D12B1F41579cB687b04988Ad564C6C"]: #V3, V4, V5, V6, V7, V8, V9, V10, V11
+                pooldata = PoolCollectionset[PoolCollectionAddys[addy]]['contract'].functions.poolData(tokenAddresses[tkn]).call(block_identifier=blocknumber)
                 poolToken, tradingFeePPM, tradingEnabled, depositingEnabled, averageRate, tknPool_liquidity = pooldata
                 depositLimit = Decimal('0')
                 bntTradingLiquidity, tknTradingLiquidity, stakingLedger_tknBalance = tknPool_liquidity
@@ -1164,7 +1176,7 @@ def update_daily_poolData_historical():
                 break
 
             if tkn == 'eth':
-                externalProtectionVaultTknBalance = w3.eth.getBalance(ExternalProtectionVault['addy'], block_identifier=blocknumber)
+                externalProtectionVaultTknBalance = w3.eth.get_balance(ExternalProtectionVault['addy'], block_identifier=blocknumber)
             else:
                 externalProtectionVaultTknBalance = tokenContracts[tkn].functions.balanceOf(ExternalProtectionVault['addy']).call(block_identifier=blocknumber)
 
@@ -1465,15 +1477,19 @@ def update_basic_poolData():
         blocknumber = int(deposits_tkn.blocknumber[i])
         tkn = deposits_tkn.tokenSymbol[i]
         addy = BancorNetwork['contract'].functions.collectionByPool(tokenAddresses[tkn]).call(block_identifier = blocknumber)
-        pooldata = PoolCollectionset[PoolCollectionAddys[addy]]['contract'].functions.poolData(tokenAddresses[tkn]).call(block_identifier=blocknumber)
-        if addy in ["0x6f9124C32a9f6E532C908798F872d5472e9Cb714", "0xEC9596e0eB67228d61a12CfdB4b3608281F261b3",]: # V1, V2
+        if addy == '0x0000000000000000000000000000000000000000':
+            poolToken = tradingFeePPM = tradingEnabled = depositingEnabled =  depositLimit = bntTradingLiquidity = tknTradingLiquidity = stakingLedger_tknBalance = ema_blocknum = emaCompressedNumerator = emaInvCompressedNumerator = Decimal('0')
+            emaCompressedDenominator = emaInvCompressedDenominator = Decimal('1')
+        elif addy in ["0x6f9124C32a9f6E532C908798F872d5472e9Cb714", "0xEC9596e0eB67228d61a12CfdB4b3608281F261b3",]: # V1, V2
+            pooldata = PoolCollectionset[PoolCollectionAddys[addy]]['contract'].functions.poolData(tokenAddresses[tkn]).call(block_identifier=blocknumber)
             poolToken, tradingFeePPM, tradingEnabled, depositingEnabled, averageRate, depositLimit, tknPool_liquidity = pooldata
             bntTradingLiquidity, tknTradingLiquidity, stakingLedger_tknBalance = tknPool_liquidity
             ema_blocknum, ema_tuple = averageRate
             emaCompressedNumerator, emaCompressedDenominator = ema_tuple
             emaInvCompressedNumerator = Decimal('0')
             emaInvCompressedDenominator = Decimal('1')
-        elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0", "0xd982e001491D414c857F2A1aaA4B43Ccf9f642B4",]: #V3, V4, V5, V6, V7, V8, V9, V10
+        elif addy in ["0xF506B96891dDe3c149FF08b2FF26a059258f7eC7","0xAD3339099ae87f1ad6e984872B95E7be24b813A7","0xb8d8033f7B2267FEFfdBAA521Cd8a86DF861Da69","0x05E29F07B9710368A1D5658750e9B4B478c15bB8","0x395eD9ffd32b255dBD128092ABa40200159d664b", "0xD2a572fEfdbD719605334DF5CBA9746e02D51558","0x5cE51256651aA90eee24259a56529afFcf13a3d0", "0xd982e001491D414c857F2A1aaA4B43Ccf9f642B4","0xB67d563287D12B1F41579cB687b04988Ad564C6C"]: #V3, V4, V5, V6, V7, V8, V9, V10, V11
+            pooldata = PoolCollectionset[PoolCollectionAddys[addy]]['contract'].functions.poolData(tokenAddresses[tkn]).call(block_identifier=blocknumber)
             poolToken, tradingFeePPM, tradingEnabled, depositingEnabled, averageRate, tknPool_liquidity = pooldata
             depositLimit = Decimal('0')
             bntTradingLiquidity, tknTradingLiquidity, stakingLedger_tknBalance = tknPool_liquidity
@@ -1818,4 +1834,4 @@ print(missing_from_datadict)
 
 # COMMAND ----------
 
-set(sorted(list(set(data_dictionary.Column)))) - set(setcols)
+(set(data_dictionary.Column)) - set(setcols)
